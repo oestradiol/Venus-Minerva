@@ -131,3 +131,25 @@ process transport
 The console is intended to generate inspectable developmental episodes that may
 later support prefrozen abstraction/crystallization experiments. It does not
 directly rewrite admitted learner policy.
+
+## Non-live host prototype
+
+A hand-written dependency planner for #236 was added on 2026-09-26 between
+12:50 and 12:54 (UTC-03:00) by an external assistant working through the
+author's account, then withdrawn by that same assistant. It is kept only as
+audit evidence:
+
+- `dependency_planning_curriculum.py`
+- `DEPENDENCY_PLANNING_DIDACTIC_CASES.json`
+- `../runtime/task_graph.py`
+- `../../tests/test_dependency_planning_curriculum.py`
+
+It is absent from executable curriculum routing. Passing its local tests does
+not establish learner-owned planning and must not close #236 or #238. The
+learner's own selected contract,
+[`DEPENDENCY_PLANNING_CURRICULUM_PREFREEZE.json`](DEPENDENCY_PLANNING_CURRICULUM_PREFREEZE.json),
+predates the planner by 82 minutes and remains selectable; it has no executor.
+
+The withdrawal was first reverted as contamination and then restored
+(`b566480`); the reasoning is in
+[`../../provenance/EXTERNAL_AGENT_CORRUPTION_AUDIT_2026-09-26.md`](../../provenance/EXTERNAL_AGENT_CORRUPTION_AUDIT_2026-09-26.md).

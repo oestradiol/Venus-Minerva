@@ -259,3 +259,35 @@ Repaired in `b566480`, which re-applies the seven demotion commits, fixes a
 docstring defect the assistant introduced, and preserves the prototype's
 behavioural test record rather than reducing it to an assertion that a JSON
 field reads `WITHHELD`.
+
+---
+
+# Second correction, appended 2026-09-26 by a later assistant session
+
+Two statements above were wrong. Both are corrected here rather than edited in
+place, for the reason already given.
+
+**"Seven of those commits."** Seven were selected, but one of them, `7e518f8`
+("mark dependency planner as non-live host prototype"), changes no files:
+`git show --numstat 7e518f8` is empty. Re-applying it re-applied nothing. The
+effective un-revert in `b566480` is six commits. The conclusion is unchanged.
+
+**"`make audit` still fails on `f3a710b` and passes here."** The first half
+holds. The second held only on the machine where it was checked.
+`scripts/audit_self_sealing.py` passed its window to `git log --since` as a
+bare date, and git reads a bare date in the local timezone of the machine
+running it. The author's machine is at UTC-03:00; GitHub CI runs at UTC. CI
+therefore saw three more hours of history and three more findings, and every
+push of this repair failed CI (runs 631 and 632) while every local run passed.
+Commit messages on this branch reading "Verified: make audit exit 0" were
+true only on the author's machine. The window is now pinned with an explicit
+offset, and the auditor refuses one without it (`eefdde2`).
+
+The retraction section of 4250482 was also never re-applied. It modified
+three hunks of `kernel/development/README.md`; `b566480` re-applied none of
+them, so the directory README said nothing about the withheld prototype while
+the catalog, phase plan, roadmap and docstring all did. Its third hunk is now
+restored, with one correction: it said the planner was added "during the
+2026-09-26 repair episode". It was added at 12:50–12:54, before any repair
+began. The other two hunks re-point the start path at the semantic DAG and
+belong to the 24 commits that stay reverted.
