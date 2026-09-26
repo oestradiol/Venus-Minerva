@@ -29,6 +29,7 @@ this file exists to prevent.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -347,6 +348,14 @@ def main() -> int:
             errors.append(
                 f"K2 AUTHORITY_TOTALITY: routing prefix {rule['prefix']} matches no tracked path"
             )
+        # An edge may pin bytes. IMMUTABLE_EVIDENCE that can change silently
+        # is not immutable; the pin makes an in-place edit a finding.
+        if rule.get("sha256") and rule.get("path") in tracked:
+            digest = hashlib.sha256((ROOT / rule["path"]).read_bytes()).hexdigest()
+            if digest != rule["sha256"]:
+                errors.append(
+                    f"K2 AUTHORITY_TOTALITY: {rule['path']} does not match its pinned sha256"
+                )
         if not rule.get("path") and not rule.get("prefix"):
             errors.append("K2 AUTHORITY_TOTALITY: routing edge names neither path nor prefix")
     withheld = [p for p in paths if classify(p, rules) == "WITHHOLD"]

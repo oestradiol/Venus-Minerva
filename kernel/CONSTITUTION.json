@@ -53,11 +53,19 @@
         "law": "fewer parts != fewer distinctions",
         "reason": "Stated nowhere in the tree. This is the fence the 2026-09-26 episode most needed: it collapsed eleven navigation links to two and called it clarity. Recorded here as constitution, absent as enforcement.",
         "reopening_condition": "Add it to AUTONOMY_SAFETY_DISTINCTION_MATRIX.json with a test reference, then remove this entry."
-      },
+      }
+    ],
+    "promoted_from_known_absent": [
       {
         "law": "NETWORK_MEMORY_CHANGES_LATER_QUERY != USEFUL_RELATIONAL_RECONSTRUCTION",
-        "reason": "The tree carries NETWORK_MEMORY!=WORLD and NETWORK_MEMORY_CAUSALITY_RETAINED, which are different claims. The specific law -- that a changed later query does not demonstrate useful relational reconstruction -- is the one the WWW-memory result actually turns on, and it is absent.",
-        "reopening_condition": "Add it to the matrix bound to the semantic-trace evidence, then remove this entry."
+        "date": "2026-09-26",
+        "where": "provenance/canonical-extracts/FRESH_INSTANCE_GROUND_2026-09-26.md, section 2 (Constitutional noncollapse)",
+        "note": "Its only occurrence in the tree is the vendored fresh-instance ground, which is IMMUTABLE_EVIDENCE. The law is now present as the project's own statement of it; it is still enforced by nothing, which K4 does not measure.",
+        "previous_entry": {
+          "law": "NETWORK_MEMORY_CHANGES_LATER_QUERY != USEFUL_RELATIONAL_RECONSTRUCTION",
+          "reason": "The tree carries NETWORK_MEMORY!=WORLD and NETWORK_MEMORY_CAUSALITY_RETAINED, which are different claims. The specific law -- that a changed later query does not demonstrate useful relational reconstruction -- is the one the WWW-memory result actually turns on, and it is absent.",
+          "reopening_condition": "Add it to the matrix bound to the semantic-trace evidence, then remove this entry."
+        }
       }
     ]
   },
@@ -166,6 +174,13 @@
       {
         "path": "docs/START_HERE.md",
         "class": "LIVE_ROUTING"
+      },
+      {
+        "path": "provenance/canonical-extracts/FRESH_INSTANCE_GROUND_2026-09-26.md",
+        "class": "IMMUTABLE_EVIDENCE",
+        "sha256": "91fcf02afb9e394acd71f2f3055f0d678c9e855b64ae94d2ca584e1742e7d4bd",
+        "source": "Canonical/FRESH_INSTANCE_GROUND.md, byte-identical in Canonical.zip (packaged 2026-09-26 17:27) and in Canonical_R00_R226_Light_Reproducibility_Archaeology_Packet (00_FRESH_INSTANCE_GROUND.md, SHA256SUMS verified).",
+        "note": "The project's own fresh-instance bootstrap, carried into git so that an instance starting from this repository can reach it. It says of itself that it is not current authority and must not override newer returned evidence; that status travels with it. Canonical remains its home: update it there, then re-vendor under a new dated name rather than editing this copy."
       }
     ],
     "routing_note": "Deliberately minimal. Only edges that are unambiguous from existing repository convention are declared. Everything else fails closed to WITHHOLD and is counted, not silently passed. Declaring the full routing graph is the branch author's call -- see CONST_G3 -- and an assistant inventing it would be the same overreach this file forbids.",

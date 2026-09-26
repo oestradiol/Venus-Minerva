@@ -339,6 +339,12 @@ class RuleFiresTests(CopyTestCase):
             ),
         )
 
+    def test_k2_fires_when_pinned_immutable_evidence_is_edited(self):
+        rel = "provenance/canonical-extracts/FRESH_INSTANCE_GROUND_2026-09-26.md"
+        text = (COPY / rel).read_text(encoding="utf-8")
+        self.write(rel, text.replace("gates, not promotions", "gates and promotions"))
+        self.assert_fires("K2")
+
     def test_k2_does_not_fail_when_files_are_added(self):
         # The removed ratchet failed whenever the unrouted count grew, which
         # every autonomous worker commit that writes a result file does.

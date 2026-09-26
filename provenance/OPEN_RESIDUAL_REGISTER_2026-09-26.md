@@ -100,10 +100,23 @@ Held by the branch author. Listed so the register is complete, not to assign.
 | Generator | the **only** specification anywhere is archival: `G_t : (S_t, Q_t, M_t) → 𝒫(Π_t)`, each proposal carrying a target distinction, expected discriminator, admissible action/query class and proof burden, selected by `π*_t = argmax V(π \| cost, uncertainty, blocked_dependencies, expected_information_gain)`. Nothing live implements it. |
 | DAG mentoring | ~~not started~~ **WRONG AS WRITTEN.** `kernel/development/SELF_TEACHING_DEVELOPMENT_DAG.json` is live with nodes A_RETURN_CREDIT_ASSIGNMENT / B_DEPENDENCY_DAG_PLANNING / C_UNCERTAINTY_NONSTATIONARITY / D_RSI_RECURRENCE_AUDIT / E_INTERNALIZATION, `current_parallel_frontier: [A, B]`, `current_join: [D]`, and seven invariants incl. `RETURN_COUNT!=EVIDENCE_COUNT`, `CRITICAL_PATH!=IMPORTANCE`, `B1!=B2!=B3`. `autonomy/interaction/mentor/TEACHING_PLAN_2026-09-26.md` (26K) instantiates the fade ladder — unknown-door exposure → discriminator coaching → adversarial review → silence. **What is missing is episodes on the DAG, not the DAG or the protocol.** |
 | Language/Music/Theater × EN/JA/PT/Math curricula | ~~zero episodes authored~~ **WRONG AS WRITTEN.** Seven episodes exist: `COGNITIVE_THEATER_{BINDING_ORDER,BINDING_ORDER_FRESH2,RELATIONAL_GRAPH_FRESH3,JOINT_SCENE_FRESH4,LOCAL_OPERATOR_FRESH5,EXPLICIT_STATE_FRESH6,SOURCE_REMOVAL_FRESH7}_RESULT.json`, plus the factorial baseline. The operator binding added this session is a candidate layer *over* existing episodes, not a first step. Missing: episodes exercising the `expressive_mode × face` product space, which is `THEATER_R1`. |
-| Strong Safe RSI / RSM / N2 / two O* / Anti-Minerva | traced; `REACH_C` proposed, never run. The lateral-compression document **names none of RSM, N2, the two O*, or Anti-Minerva anywhere** — a negative result worth recording, since it means that vocabulary's specification lives elsewhere. |
+| Strong Safe RSI / RSM / N2 / two O* / Anti-Minerva | traced; `REACH_C` proposed, never run. The lateral-compression document **names none of RSM, N2, the two O*, or Anti-Minerva anywhere** — ~~a negative result worth recording, since it means that vocabulary's specification lives elsewhere~~ **ANSWERED:** it lives in the Venus monograph — `eq:rsm` (Strong RSM routing loop), `eq:n2` (Strong-N2 = RecursiveSufficiency × NonpreauthoredReturn × CorrigibleContinuation), `eq:rsi` (bounded RSI) — and the Minerva monograph's `𝓜 = ⟨WM, RSM, N2, 𝒬, RSI, T, Γ⟩`. Cited in `kernel/CONSTITUTION.json` block_e. |
 | Return credit / dependency planning | **not previously listed and it exists** — `RETURN_CREDIT_ASSIGNMENT_PREFREEZE.json`, `DEPENDENCY_PLANNING_CURRICULUM_PREFREEZE.json`, curricula and tests. The archive insists A and B are *separate* branches that "only join later in a Strong Safe RSI recurrence audit"; the external agent's collapse of the two is a textbook success-composition fallacy. |
 | Full superficial commit ledger across all 3006 commits / 207 refs | **not done.** A style-and-date fingerprint was substituted. History before 2026-09-25 was never scanned, and `audit_since` bakes that gap into the tool. |
 | B9 Strong-N2, B10 RSM/RSI split, B12 theater product space | in candidate files; none admitted to the gate chain |
+
+## Tier 7 — six-branch audit (added later on 2026-09-26)
+
+Evidence in `provenance/SIX_BRANCH_AUDIT_2026-09-26.md`.
+
+| id | question | reopens on |
+|---|---|---|
+| `SIX_1` | `split/venus` CI is red: `b4c1e5d` removed the section `make boundary` greps. Fix prepared on `claude/venus-restore-boundary-gate` (`30813d2`), not pushed. | The author pushes it to `split/venus`, or rejects it with a reason. |
+| `SIX_2` | `main`'s `branch-policy-check` fails: `88814b3` removed the Now Map's Branch lifecycle section. Fix prepared on `claude/root-restore-branch-policy` (`444f487`), not pushed. | Same. |
+| `SIX_3` | `make audit` on `main`, Arcane Magics, Eclipsis and OFE is run by no CI and fails on each (inherited monorepo targets referencing Minerva-only or main-only files). | Each branch's owner deletes its dead target or wires it into its CI and makes it pass. |
+| `SIX_4` | Venus owns evaluator independence by the monographs' own routing (Arcane Magics l.1234) and has zero tests; its only gate is `grep`. | A Venus test that fails when a return's source ancestry intersects its producer's, per Venus `A(m_1) ∩ A(m_2) ≠ ∅`. Depends on LIN-4. |
+| `SIX_5` | `EVALUATOR_CUSTODY` now has a formal reopening predicate (source-ancestry disjointness) but R198 and R206 record no validator identity, so a check would fail on both. | The author's ruling on LIN-4. |
+| `SIX_6` | Squash-merging the repair branch would rewrite the SHAs that key the declared self-sealing residuals, and the auditor would fail closed. | Merged by fast-forward or merge commit; or keys re-declared by a party who did not author them. |
 
 ---
 
