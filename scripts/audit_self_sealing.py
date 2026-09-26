@@ -39,6 +39,7 @@ have passed. Restoration episodes are now declared residuals like any other.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -156,6 +157,22 @@ def removed_fence_tokens(sha: str, path: str, tokens: list[str]) -> list[str]:
     return hits
 
 
+OFFSET = re.compile(r"(Z|[+-]\d{2}:?\d{2})$")
+
+
+def has_explicit_offset(since: str) -> bool:
+    """True only when the window start pins its own timezone.
+
+    `git log --since="2026-09-26 00:00"` is read in the local timezone of the
+    machine running it. The 2026-09-26 repair was verified on a machine at
+    UTC-03:00 and gated in CI at UTC; the three-hour difference admitted three
+    extra commits into the window in CI only, so every local "make audit exit
+    0" on the repair was true on the author's laptop and false on the gate.
+    A verdict that depends on where it runs is a check weaker than its name.
+    """
+    return bool(OFFSET.search(since.strip()))
+
+
 def is_prefrozen(path: str, markers: list[str]) -> bool:
     return any(marker in path for marker in markers)
 
@@ -199,6 +216,14 @@ def main() -> int:
     since = scope.get("audit_since")
     if not since:
         print("WITHHOLD: scope declares no audit_since window")
+        return 2
+    if not has_explicit_offset(since):
+        print(
+            f"WITHHOLD: audit_since {since!r} carries no explicit UTC offset. git "
+            "resolves a bare date in the local timezone of whatever machine runs "
+            "the audit, so the window -- and the verdict -- would differ between "
+            "a laptop and CI."
+        )
         return 2
 
     exceptions = scope.get("admitted_exceptions", [])

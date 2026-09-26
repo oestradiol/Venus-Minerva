@@ -17,7 +17,7 @@
     "reverted_by": "6b84d1c"
   },
   "episode_gap_seconds": 1800,
-  "audit_since": "2026-09-26 00:00",
+  "audit_since": "2026-09-26T00:00:00+00:00",
   "rules": [
     {
       "id": "R1_SELF_SEALING",
@@ -108,6 +108,13 @@
       "guards": [
         "Makefile"
       ]
+    },
+    {
+      "checker": "scripts/audit_constitution.py",
+      "guards": [
+        "kernel/CONSTITUTION.json"
+      ],
+      "note": "Added 2026-09-26 before the constitution auditor was first modified. f79b332 introduced both together, which is bootstrap; every later edit that changes both in one episode is the pattern R1 exists to surface."
     }
   ],
   "fence_tokens": [
@@ -253,6 +260,24 @@
       "class": "UNADJUDICATED",
       "note": "CI workflow modified alongside the Makefile whose targets it invokes.",
       "reopening_condition": "Likely benign coupling, but confirm the workflow change did not weaken a gate in the same move that the Makefile changed what that gate runs."
+    },
+    {
+      "key": "R2_FENCE_REMOVAL|README.md|42ef3134",
+      "class": "UNADJUDICATED",
+      "note": "Visible only in CI until the audit window was pinned to UTC. README.md lost 'self-implication != self-certification', 're-derivation != memory lookup' and 'current Perspective != diachronic Observer' in a landing-page grammar rewrite ('ui(minerva): align branch landing grammar with sibling layers'). All three survive in AGENTS.md on this branch; 'model(World) != World' survives in README.md itself.",
+      "reopening_condition": "Confirm AGENTS.md is an equivalent reader surface for these three fences, or restore them to README.md. Confirm whether removal was deliberate scope reduction during the grammar alignment or incidental loss."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|97102d98",
+      "class": "UNADJUDICATED",
+      "note": "Visible only in CI until the audit window was pinned to UTC. Same shape as the three already-declared autonomy-matrix residuals: paired 'safety:' commits adding matrix rows and 'audit:' commits custody-binding them in the checker, seconds apart (22:24-23:10 UTC-03:00, 2026-09-25).",
+      "reopening_condition": "As for R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|b5896df8. If the coupling is intended, declare the matrix and its checker as a single admitted unit with an external discriminator."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|fe7fb0cc",
+      "class": "UNADJUDICATED",
+      "note": "Visible only in CI until the audit window was pinned to UTC. Same paired safety/audit shape, restoring #165 GitHub World-return distinctions and the indexed-center law (23:20 UTC-03:00, 2026-09-25).",
+      "reopening_condition": "As above."
     }
   ],
   "withhold_rule": "If the audit window cannot be resolved, or the scope declaration cannot be parsed, the auditor fails closed rather than reporting PASS.",
@@ -265,7 +290,8 @@
     "R1 precision is poor for long sessions. Episodes group by author and a 1800s gap, so the largest episode on this branch is 308 commits and R1 can fire on a checker and a guarded file touched hours apart for unrelated reasons. R1 is a prompt to look, not a verdict.",
     "R1 and R3 key on status M, so deleting a checker or deleting a prefrozen artifact fires nothing.",
     "R2 follows the post-rename path only, so renaming a fence surface evades it.",
-    "audit_since is a hard floor at 2026-09-26 00:00 and hides all earlier history. It never advances, so it is forward-safe, but history before that date has never been scanned by this tool."
+    "audit_since is a hard floor at 2026-09-26T00:00:00+00:00 and hides all earlier history. It never advances, so it is forward-safe, but history before that instant has never been scanned by this tool."
   ],
-  "fence_tokens_note": "Section C of the session ledger listed roughly 25 fences while only 16 were watched. Extended to cover the unwatched remainder plus fences recovered from the Canonical archive during the 2026-09-26 lineage and extraction passes. A token that appears nowhere in the tree is harmless: R2 only fires on deletion."
+  "fence_tokens_note": "Section C of the session ledger listed roughly 25 fences while only 16 were watched. Extended to cover the unwatched remainder plus fences recovered from the Canonical archive during the 2026-09-26 lineage and extraction passes. A token that appears nowhere in the tree is harmless: R2 only fires on deletion.",
+  "audit_since_note": "Pinned with an explicit UTC offset. The earlier bare value '2026-09-26 00:00' was resolved by git in the local timezone of whichever machine ran the audit: UTC-03:00 on the author's machine, UTC in GitHub CI. CI therefore saw three more hours of history, three extra findings, and failed on every push of the repair (runs 631 and 632), while every local run reported exit 0. The window was pinned to what CI had always measured rather than to what the laptop measured, so no finding the gate had already reported is removed. The auditor now refuses an audit_since without an explicit offset."
 }

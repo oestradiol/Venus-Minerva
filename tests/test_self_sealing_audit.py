@@ -189,7 +189,7 @@ class DetectionTests(unittest.TestCase):
 
         scope = {
             "episode_gap_seconds": 1800,
-            "audit_since": "2000-01-01 00:00",
+            "audit_since": "2000-01-01T00:00:00+00:00",
             "guarded": [{"checker": "scripts/check.py", "guards": ["GUARDED.md"]}],
             "fence_tokens": ["a != b"],
             "fence_surfaces": ["GUARDED.md"],
@@ -319,6 +319,39 @@ class DetectionTests(unittest.TestCase):
         scope_path.write_text(json.dumps(data), encoding="utf-8")
         code, out = self.audit_in(tmp)
         self.assertEqual(code, 0, out)
+
+    def test_bare_audit_since_withholds(self):
+        # git reads a bare date in the running machine's timezone, so the
+        # window would differ between a laptop and CI. Refuse rather than
+        # return a location-dependent verdict.
+        tmp, _ = self.build({"audit_since": "2000-01-01 00:00"})
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 2, out)
+        self.assertIn("explicit UTC offset", out)
+
+    def test_verdict_does_not_depend_on_the_machine_timezone(self):
+        # Regression for the 2026-09-26 split: a commit three hours after the
+        # UTC boundary was inside the window in CI (UTC) and outside it on
+        # the author's machine (UTC-03:00), so CI failed while every local
+        # run passed. With an explicit offset both must agree.
+        import os
+
+        tmp, run = self.build({"audit_since": "2021-06-01T00:00:00+00:00"})
+        (tmp / "scripts/check.py").write_text("# checker v2\n", encoding="utf-8")
+        (tmp / "GUARDED.md").write_text("a != b\nchanged\n", encoding="utf-8")
+        run("commit", "-qam", "edit both", when="2021-06-01T01:00:00+0000")
+        verdicts = {}
+        old = os.environ.get("TZ")
+        try:
+            for tz in ("UTC", "America/Sao_Paulo", "Pacific/Kiritimati"):
+                os.environ["TZ"] = tz
+                verdicts[tz] = self.audit_in(tmp)[0]
+        finally:
+            if old is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = old
+        self.assertEqual(set(verdicts.values()), {1}, verdicts)
 
     def test_no_restoration_bypass_remains_in_source(self):
         self.assertNotIn("def is_restoration", SCRIPT.read_text(encoding="utf-8"))
