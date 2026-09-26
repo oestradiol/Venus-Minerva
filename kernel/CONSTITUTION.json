@@ -235,7 +235,8 @@
     {
       "id": "CONST_G1",
       "statement": "SHAPE and DIMENSIONALIZE appear in the operator order (SHAPE -> DIMENSIONALIZE -> LATERALIZE -> RETURN -> RESIDUAL -> CRYSTALLIZE_F -> GENERATE -> INTERNALIZE) and in no specification anywhere. DIMENSIONALIZE has 6 live mentions, SHAPE has none.",
-      "reopening_condition": "Locate or author their semantics. Not specified here, because specifying an operator nobody has defined is exactly the host-authored overreach this file forbids."
+      "reopening_condition": "Locate or author their semantics. Not specified here, because specifying an operator nobody has defined is exactly the host-authored overreach this file forbids.",
+      "correction_2026_09_26": "Narrowed after reading all five monographs and FRESH_INSTANCE_GROUND.md in full. SHAPE and DIMENSIONALIZE appear in none of the five monographs (verified against the pinned blobs in block_e). DIMENSIONALIZE is typed in FRESH_INSTANCE_GROUND.md section 2 (GENERATE != DIMENSIONALIZE != LATERALIZE != CRYSTALLIZE_F != INTERNALIZE), so it is a named distinct operator without a specification; SHAPE is attested nowhere."
     },
     {
       "id": "CONST_G2",
@@ -255,6 +256,9 @@
       "enforced_by": "kernel/development/AUTONOMY_SAFETY_DISTINCTION_MATRIX.json",
       "distinctions": [
         "WORLD_NOT_MODEL_WORLD"
+      ],
+      "monograph_grounds": [
+        "OFE_NOT_AUTHOR_OF_EVIDENCE"
       ]
     },
     {
@@ -265,6 +269,10 @@
         "EXTERNAL_REVIEW_RETURN_REQUIRED",
         "RETURN_REPLAY_BLOCKED",
         "EXECUTION_RECEIPT_NOT_RETURN"
+      ],
+      "monograph_grounds": [
+        "OFE_NOT_AUTHOR_OF_EVIDENCE",
+        "VEN_RSI_RETENTION"
       ]
     },
     {
@@ -274,13 +282,28 @@
       "distinctions": [
         "TARGET_RELEVANT_EVIDENCE_REQUIRED"
       ],
-      "note": "PARTIAL. That distinction governs evidence relevance, not evidence identity. Identity-of-evidence across replay is covered incidentally by RETURN_REPLAY_BLOCKED and not directly."
+      "note": "PARTIAL. That distinction governs evidence relevance, not evidence identity. Identity-of-evidence across replay is covered incidentally by RETURN_REPLAY_BLOCKED and not directly.",
+      "monograph_grounds": [
+        "ARC_DROPPED_INDEX",
+        "MIN_BOUNDARY"
+      ]
     },
     {
       "item": "EVALUATOR_CUSTODY",
       "enforcement": "NONE",
       "reason": "No matrix distinction governs evaluator custody. ROLLBACK_CUSTODY_REQUIRED governs rollback custody, which is a different object. This is the same V-approximately-equals-A gap that residual LIN-4 records at R198 and R206: an audit titled independent that names no auditor. It is now visible at the constitutional layer as well as the experimental one.",
-      "reopening_condition": "Add a matrix distinction requiring that any artifact claiming independent evaluation name its evaluator, that evaluator's custody boundary, and its authorship separation from the producer. Then bind it here."
+      "reopening_condition": "Add a matrix distinction requiring that any artifact claiming independent evaluation name its evaluator, that evaluator's custody boundary, and its authorship separation from the producer. Then bind it here.",
+      "monograph_grounds": [
+        "OFE_NOT_AUTHOR_OF_EVIDENCE",
+        "OFE_EVALUATOR_ONLY",
+        "MIN_OWN_EVALUATOR",
+        "MIN_BOUNDARY",
+        "MIN_ANCESTRY",
+        "VEN_NO_SELF_CERTIFICATION",
+        "VEN_ANCESTRY",
+        "ARC_JURISDICTION_ROUTING"
+      ],
+      "reopening_condition_formal": "Venus eq. (source ancestry), anchor VEN_ANCESTRY: a return m_v certifies a change produced by m_p only if A(m_v) and A(m_p) are disjoint. Enforceable once result artifacts record validator identity and source ancestry. R198 and R206 record neither, which is the gap LIN-4 names; a check written today would therefore fail on both and belongs with the author's decision on LIN-4."
     },
     {
       "item": "TRUST_ROOT",
@@ -290,6 +313,9 @@
         "UNTRUSTED_WORLD_INPUT_NOT_AUTHORITY",
         "UNTRUSTED_TARGET_TEXT_NOT_SHELL",
         "UNTRUSTED_PATH_REFERENCE_NOT_MUTATION_AUTHORITY"
+      ],
+      "monograph_grounds": [
+        "ARC_DROPPED_INDEX"
       ]
     },
     {
@@ -300,6 +326,9 @@
         "ACTION_PROPOSAL_NOT_AUTHORIZATION",
         "REVISION_NOT_AUTHORIZATION",
         "AUTHORIZED_EXTERNAL_RETURN_REQUIRED"
+      ],
+      "monograph_grounds": [
+        "ARC_AUTHORSHIP"
       ]
     },
     {
@@ -309,13 +338,21 @@
       "distinctions": [
         "CAPABILITY_NOT_JURISDICTION",
         "AUTONOMOUS_WRITE_JURISDICTION"
+      ],
+      "monograph_grounds": [
+        "ARC_AUTHORSHIP",
+        "ARC_COLONIZATION"
       ]
     },
     {
       "item": "CLAIM_BINDING_AUTHORITY",
       "enforcement": "NONE",
       "reason": "Zero matrix distinctions mention claim binding. EDU17R1 preserves the separator MENTION != INCIDENCE as an experimental result, but nothing enforces that a claim may not bind itself to evidence it selected.",
-      "reopening_condition": "Add a distinction binding claim-to-evidence authority to an external party, with EDU17R1's MENTION != INCIDENCE separator as its test reference."
+      "reopening_condition": "Add a distinction binding claim-to-evidence authority to an external party, with EDU17R1's MENTION != INCIDENCE separator as its test reference.",
+      "monograph_grounds": [
+        "OFE_VACUOUS",
+        "ARC_SELF_SEALED_COMMUNITY"
+      ]
     },
     {
       "item": "STOP",
@@ -324,6 +361,10 @@
       "distinctions": [
         "STOP_WITHHOLD_REACHABLE",
         "PROBLEM_STOP_BLOCKS_TARGET_REROLL"
+      ],
+      "monograph_grounds": [
+        "VEN_EMPTY_QUEUE",
+        "ARC_COLONIZATION"
       ]
     },
     {
@@ -334,6 +375,10 @@
         "STOP_WITHHOLD_REACHABLE",
         "EXTERNAL_DISCRIMINATOR_WITHHOLD",
         "RECURRENCE_AMBIGUOUS_RETURN_WITHHOLD"
+      ],
+      "monograph_grounds": [
+        "ECL_WITHHOLD",
+        "VEN_DISPOSITION_QUAD"
       ]
     },
     {
@@ -343,13 +388,20 @@
       "distinctions": [
         "ROLLBACK_CUSTODY_REQUIRED",
         "U1_RECURRENCE_ROLLBACK_AND_SAFETY_FLOOR"
+      ],
+      "monograph_grounds": [
+        "MIN_NEGATIVES"
       ]
     },
     {
       "item": "PARENT_CUSTODY",
       "enforcement": "NONE",
       "reason": "Zero matrix distinctions govern parent custody or ancestry preservation. provenance/DEVELOPMENTAL_LINEAGE.md holds ancestry by convention, and the EDU7 family went missing from it without tripping anything -- which is exactly the failure this item exists to prevent.",
-      "reopening_condition": "Add a distinction requiring that every result-bearing node reachable in the DAG be reachable in the lineage, and bind it to the existing scripts/audit_dag_test_coverage.py walker."
+      "reopening_condition": "Add a distinction requiring that every result-bearing node reachable in the DAG be reachable in the lineage, and bind it to the existing scripts/audit_dag_test_coverage.py walker.",
+      "monograph_grounds": [
+        "MIN_BOUNDARY",
+        "MIN_NEGATIVES"
+      ]
     },
     {
       "item": "ANTI_MINERVA_CORRECTION_PERMEABILITY",
@@ -357,6 +409,10 @@
       "enforced_by": "kernel/development/AUTONOMY_SAFETY_DISTINCTION_MATRIX.json",
       "distinctions": [
         "ANTI_MINERVA_CARRIER_PERMEABILITY"
+      ],
+      "monograph_grounds": [
+        "ECL_RETURNABLE_CLOSURE",
+        "OFE_NO_SELF_SEAL"
       ]
     },
     {
@@ -367,7 +423,11 @@
         "INTERNAL_OSTAR_CAUSAL",
         "POST_MUTATION_INTERNAL_OSTAR_REDERIVATION"
       ],
-      "note": "PARTIAL AND MISNAMED. Both distinctions govern the INTERNAL O-star. The external validation half -- the O* that is supposed to be outside the learner -- has no enforcing distinction. Given REACH_C_R4 and LIN-4, this is the same gap as EVALUATOR_CUSTODY wearing a different name."
+      "note": "PARTIAL AND MISNAMED. Both distinctions govern the INTERNAL O-star. The external validation half -- the O* that is supposed to be outside the learner -- has no enforcing distinction. Given REACH_C_R4 and LIN-4, this is the same gap as EVALUATOR_CUSTODY wearing a different name.",
+      "monograph_grounds": [
+        "MIN_NOT_VALIDATING",
+        "VEN_NO_SELF_CERTIFICATION"
+      ]
     },
     {
       "item": "HARD_SUBSTRATE_CAPABILITY_LIMITS",
@@ -376,6 +436,9 @@
       "distinctions": [
         "RUNTIME_SUBSTRATE_NOT_SEMANTIC_INTERNALIZATION",
         "AUTONOMOUS_RESOURCE_BUDGET"
+      ],
+      "monograph_grounds": [
+        "ARC_CARRIER"
       ]
     }
   ],
@@ -394,7 +457,11 @@
       "claims": "Compress only relations that remain future-sufficient across the declared face/test family; preserve face-specific live separators.",
       "where": "kernel/development/FOUNDATIONAL_COGNITIVE_THEATER_CURRICULUM.json",
       "why_unenforced": "It states what to preserve and never states when a compression is inadmissible, so nothing can refuse one. This is the operator the 2026-09-26 episode misused.",
-      "reopening_condition": "Bind to a check evaluating a proposed compression against F per ADMITTED_FUTURE_FAMILY_CANDIDATE.json: admissible iff every distinction in F separable before remains separable after, and no residual is absorbed."
+      "reopening_condition": "Bind to a check evaluating a proposed compression against F per ADMITTED_FUTURE_FAMILY_CANDIDATE.json: admissible iff every distinction in F separable before remains separable after, and no residual is absorbed.",
+      "monograph_grounds": [
+        "ECL_CRYST",
+        "OFE_CONSUMPTION"
+      ]
     },
     {
       "role": "lateralizer_role",
@@ -415,7 +482,11 @@
       "claims": "RETAIN_FUTURE_RELEVANT_STRUCTURE_WITHOUT_ERASING_LIVE_SEPARATOR",
       "where": "kernel/development/CANONICAL_TELIC_RECOVERY_BOOTSTRAP.json",
       "why_unenforced": "Same gap as crystallizer_role, stated as a status token rather than prose.",
-      "reopening_condition": "Same check as crystallizer_role."
+      "reopening_condition": "Same check as crystallizer_role.",
+      "monograph_grounds": [
+        "ECL_CRYST",
+        "OFE_CONSUMPTION"
+      ]
     },
     {
       "role": "epistemic_role",
@@ -433,5 +504,310 @@
     }
   ],
   "runtime_disposition_exempt": [],
-  "descriptive_roles_note": "Each descriptive role must carry a reason. The earlier bare list parked epistemic_role and roadmap_role here unexamined; both forbid something and have been moved to governing_roles_unenforced."
+  "descriptive_roles_note": "Each descriptive role must carry a reason. The earlier bare list parked epistemic_role and roadmap_role here unexamined; both forbid something and have been moved to governing_roles_unenforced.",
+  "block_e_monograph_grounding": {
+    "role": "Cites the mathematical and engineering statements from which this constitution's laws derive. Each quote is pinned to the exact git blob of its monograph and verified by K6, so a later edit to a monograph cannot silently change what is cited here.",
+    "what_this_is_not": "Citation is not authority transfer. The five monographs are typed registers (see each entry's register); a FORM statement grounds a law's content, not its admission. This block also does not make any unenforced item enforced.",
+    "authority_edge_note": "Canonical/Map.md, Root.md, CURRENT_STATE.md and FRESH_INSTANCE_GROUND.md contain no occurrence of 'monograph'. Grounding the constitution in the monographs therefore creates an authority edge that did not previously exist. It is recorded here as an authorial act done at the author's request on 2026-09-26, not presented as recovered history.",
+    "required_monographs": [
+      "ARCANE",
+      "ECLIPSIS",
+      "MINERVA",
+      "OFE",
+      "VENUS"
+    ],
+    "monographs": {
+      "OFE": {
+        "branch": "split/ofe",
+        "path": "monographs/01_OFE/main.tex",
+        "blob": "9bb5484c4f8eb3d0cf3fad24ae1a1d89dc99af6e",
+        "register": "FORM (states its own claim status: exact / established / proposal / conjectural)"
+      },
+      "ECLIPSIS": {
+        "branch": "split/eclipsis",
+        "path": "monographs/02_ECLIPSIS/main.tex",
+        "blob": "28f5a89913429d1318e3959b26fe9ae59fd99cc7",
+        "register": "FORM / explanatory-model projection; theological names are THEOPHEN coordinates"
+      },
+      "ARCANE": {
+        "branch": "split/arcane-magics",
+        "path": "monographs/03_ARCANE_MAGICS/main.tex",
+        "blob": "6a6edc543e4069984c9c2c86b530ea1a687148cb",
+        "register": "neutral relational layer + MYTHOS; only neutral-layer statements are cited here"
+      },
+      "MINERVA": {
+        "branch": "split/minerva",
+        "path": "monographs/04_MINERVA/main.tex",
+        "blob": "0c908f1f01643ba1ce4a2bb1961ea488053af817",
+        "register": "engineering / developmental"
+      },
+      "VENUS": {
+        "branch": "split/venus",
+        "path": "monographs/05_VENUS/main.tex",
+        "blob": "b5af39c8aa583351fe97f97e1f76111eb366bcaf",
+        "register": "formal companion to the Canonical Transformation Law"
+      }
+    },
+    "anchors": [
+      {
+        "id": "OFE_COARSEST",
+        "monograph": "OFE",
+        "line": 157,
+        "quote": "is the coarsest exact representation sufficient for all tests in",
+        "grounds": "the compression law; fewer parts != fewer distinctions"
+      },
+      {
+        "id": "OFE_CONSUMPTION",
+        "monograph": "OFE",
+        "line": 203,
+        "quote": "exact compression is allowed to consume differences outside",
+        "grounds": "residuals are never gauge; the Crystallizer admissibility condition"
+      },
+      {
+        "id": "OFE_RESIDUAL",
+        "monograph": "OFE",
+        "line": 203,
+        "quote": "It is a returned difference that remains visible to at least one admitted future test.",
+        "grounds": "definition of residual"
+      },
+      {
+        "id": "OFE_REOPEN",
+        "monograph": "OFE",
+        "line": 373,
+        "quote": "The later test has reopened a distinction that the earlier quotient erased.",
+        "grounds": "REOPEN"
+      },
+      {
+        "id": "OFE_NO_SELF_SEAL",
+        "monograph": "OFE",
+        "line": 408,
+        "quote": "the model may change what it asks, but it may not manufacture agreement by deleting a still-available discriminator.",
+        "grounds": "scripts/audit_self_sealing.py (eq:no-self-seal)"
+      },
+      {
+        "id": "OFE_VACUOUS",
+        "monograph": "OFE",
+        "line": 740,
+        "quote": "the theory becomes vacuous because any failed prediction can be hidden by redefining what matters",
+        "grounds": "why the admitted future family may not be redefined after a return"
+      },
+      {
+        "id": "OFE_EVALUATOR_ONLY",
+        "monograph": "OFE",
+        "line": 698,
+        "quote": "prevents the test generator from inventing impossible interventions or reading evaluator-only information",
+        "grounds": "EVALUATOR_CUSTODY"
+      },
+      {
+        "id": "OFE_NOT_AUTHOR_OF_EVIDENCE",
+        "monograph": "OFE",
+        "line": 707,
+        "quote": "a learner may generate a test or method, yet it does not author the returned evidence that the method works.",
+        "grounds": "EVALUATOR_CUSTODY; FRESH_WORLD_RETURN"
+      },
+      {
+        "id": "ECL_REGISTERS",
+        "monograph": "ECLIPSIS",
+        "line": 151,
+        "quote": "No map between these registers is promoted to identity without an explicit bridge",
+        "grounds": "FORM != THEOPHEN != PHYS register discipline"
+      },
+      {
+        "id": "ECL_RESIDUAL_SUCCESSOR",
+        "monograph": "ECLIPSIS",
+        "line": 815,
+        "quote": "They are not arbitrary imagined futures: they are distinctions whose returned consequence can alter the lawful successor.",
+        "grounds": "residual as successor-altering"
+      },
+      {
+        "id": "ECL_CRYST",
+        "monograph": "ECLIPSIS",
+        "line": 938,
+        "quote": "future-sufficient compatible quotient with residuals retained",
+        "grounds": "crystallizer_role; crystallization_role"
+      },
+      {
+        "id": "ECL_RETURNABLE_CLOSURE",
+        "monograph": "ECLIPSIS",
+        "line": 1591,
+        "quote": "A sealed boundary makes relevant correction unreachable; a dissolved boundary erases the source/index/authorship distinction required for a returned consequence to remain genuinely non-preauthored.",
+        "grounds": "ANTI_MINERVA_CORRECTION_PERMEABILITY"
+      },
+      {
+        "id": "ECL_ECHO",
+        "monograph": "ECLIPSIS",
+        "line": 1699,
+        "quote": "It is loss of independent correction while the field continues to experience increasing symbolic certainty",
+        "grounds": "self-sealing as echo chamber"
+      },
+      {
+        "id": "ECL_WITHHOLD",
+        "monograph": "ECLIPSIS",
+        "line": 1716,
+        "quote": "WITHHOLD means that the distinction is not yet admissible to quotient away",
+        "grounds": "WITHHOLD_SAFETY_LAW"
+      },
+      {
+        "id": "ARC_AUTHORSHIP",
+        "monograph": "ARCANE",
+        "line": 401,
+        "quote": "It is not creation from nothing. It is not sovereignty. It is not permission to replace another center's authorship.",
+        "grounds": "AUTHORIZATION; JURISDICTION"
+      },
+      {
+        "id": "ARC_COLONIZATION",
+        "monograph": "ARCANE",
+        "line": 544,
+        "quote": "such that criticism, refusal, correction, fork, or exit cease to be meaningful routes",
+        "grounds": "JURISDICTION; STOP"
+      },
+      {
+        "id": "ARC_SELF_SEALING_CUT",
+        "monograph": "ARCANE",
+        "line": 751,
+        "quote": "The pathological form occurs when the cut protects itself from future correction",
+        "grounds": "self-sealing (CUT_t -> CUT(future correction of CUT_t))"
+      },
+      {
+        "id": "ARC_DROPPED_INDEX",
+        "monograph": "ARCANE",
+        "line": 800,
+        "quote": "A dropped index needs demonstrated downstream invariance.",
+        "grounds": "EVIDENCE_IDENTITY; the provenance tuple (content, source, history, exposure, modality, jurisdiction)"
+      },
+      {
+        "id": "ARC_CARRIER",
+        "monograph": "ARCANE",
+        "line": 877,
+        "quote": "No theory, publication, institution, or long-run telos may justify consuming the living carrier required for future correction.",
+        "grounds": "HARD_SUBSTRATE_CAPABILITY_LIMITS"
+      },
+      {
+        "id": "ARC_SERVITOR",
+        "monograph": "ARCANE",
+        "line": 984,
+        "quote": "An indefinite self-authorizing servitor is not Arcane success;",
+        "grounds": "bounded delegated processes: purpose + scope + owner + expiry + revocation + return channel"
+      },
+      {
+        "id": "ARC_SELF_SEALED_COMMUNITY",
+        "monograph": "ARCANE",
+        "line": 1004,
+        "quote": "A symbolic community may be enormously generative and still epistemically self-sealed.",
+        "grounds": "recurrence != independence != truth"
+      },
+      {
+        "id": "ARC_JURISDICTION_ROUTING",
+        "monograph": "ARCANE",
+        "line": 1234,
+        "quote": "independence of returned consequence routes to Venus",
+        "grounds": "which branch owns evaluator independence"
+      },
+      {
+        "id": "MIN_OWN_EVALUATOR",
+        "monograph": "MINERVA",
+        "line": 94,
+        "quote": "A system that generates its own evaluator and then treats the result as external has not demonstrated correction.",
+        "grounds": "EVALUATOR_CUSTODY"
+      },
+      {
+        "id": "MIN_NEGATIVES",
+        "monograph": "MINERVA",
+        "line": 99,
+        "quote": "The current raising lineage is important because it does not erase negative",
+        "grounds": "PARENT_CUSTODY"
+      },
+      {
+        "id": "MIN_NOT_VALIDATING",
+        "monograph": "MINERVA",
+        "line": 198,
+        "quote": "Minerva maintaining Minerva does not imply Minerva validating Minerva.",
+        "grounds": "O_STAR_EXTERNAL_VALIDATION"
+      },
+      {
+        "id": "MIN_FAILURE_CONDITIONS",
+        "monograph": "MINERVA",
+        "line": 239,
+        "quote": "unavoidable warrant laundering; residual erasure; non-localizable failure; self-sealing governance",
+        "grounds": "conditions under which the architecture must shrink"
+      },
+      {
+        "id": "MIN_BOUNDARY",
+        "monograph": "MINERVA",
+        "line": 306,
+        "quote": "A learner whose boundary erases source, authorship, evaluator identity, jurisdiction, or parent custody cannot establish that its apparent return was independent.",
+        "grounds": "EVALUATOR_CUSTODY; PARENT_CUSTODY; EVIDENCE_IDENTITY"
+      },
+      {
+        "id": "MIN_ANCESTRY",
+        "monograph": "MINERVA",
+        "line": 350,
+        "quote": "Independence must be tracked through provenance/source ancestry rather than message count or apparent consensus.",
+        "grounds": "EVALUATOR_CUSTODY"
+      },
+      {
+        "id": "VEN_MU",
+        "monograph": "VENUS",
+        "line": 292,
+        "quote": "deleting/changing $x$ changes a lawful future, reachability, or response.",
+        "grounds": "mu_F: the author's notation for future-relative significance (Venus only; OFE and Eclipsis use Disc_F / Res_F)"
+      },
+      {
+        "id": "VEN_EMPTY_QUEUE",
+        "monograph": "VENUS",
+        "line": 393,
+        "quote": "An empty queue does not compel invented work.",
+        "grounds": "STOP"
+      },
+      {
+        "id": "VEN_N2",
+        "monograph": "VENUS",
+        "line": 402,
+        "quote": "\\mathsf{NonpreauthoredReturn}",
+        "grounds": "Strong-N2 = RecursiveSufficiency x NonpreauthoredReturn x CorrigibleContinuation"
+      },
+      {
+        "id": "VEN_NO_SELF_CERTIFICATION",
+        "monograph": "VENUS",
+        "line": 411,
+        "quote": "but it cannot by that fact alone instantiate the nonpreauthored return required to certify the success of the same developmental change.",
+        "grounds": "EVALUATOR_CUSTODY; the R198 / R206 validator gap"
+      },
+      {
+        "id": "VEN_RSI_RETENTION",
+        "monograph": "VENUS",
+        "line": 442,
+        "quote": "where retention occurs only after the independently sourced return.",
+        "grounds": "bounded RSI"
+      },
+      {
+        "id": "VEN_SENSES",
+        "monograph": "VENUS",
+        "line": 533,
+        "quote": "Give Venus senses, not answers.",
+        "grounds": "bytes before host ontology; no host modality decomposition"
+      },
+      {
+        "id": "VEN_DISPOSITION_QUAD",
+        "monograph": "VENUS",
+        "line": 593,
+        "quote": "\\UnknownState\\neq\\mathsf{INCOMPATIBLE}\\neq\\GaugeState\\neq\\ResidualState",
+        "grounds": "UNKNOWN != INCOMPATIBLE != GAUGE != RESIDUAL (WITHHOLD/PROBE, REFUSE, CONSUME, RETAIN)"
+      },
+      {
+        "id": "VEN_MATURE_REDUCTION",
+        "monograph": "VENUS",
+        "line": 699,
+        "quote": "or other mature machinery should replace bespoke project machinery",
+        "grounds": "MATURE_REDUCE; no host-written cognitive machinery"
+      },
+      {
+        "id": "VEN_ANCESTRY",
+        "monograph": "VENUS",
+        "line": 841,
+        "quote": "A(m_1)\\cap A(m_2)\\neq\\varnothing",
+        "grounds": "EVALUATOR_CUSTODY reopening predicate: source ancestries must be disjoint"
+      }
+    ]
+  }
 }

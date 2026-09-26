@@ -49,6 +49,13 @@ def setUpModule() -> None:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
     git(COPY, "init", "-q")
+    # K6 verifies monograph quotes against pinned blobs from the other split
+    # branches. Borrow the live object store read-only so the copy can see
+    # them without copying five branches' history.
+    live_objects = git(LIVE, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    (COPY / ".git/objects/info/alternates").write_text(
+        str(Path(live_objects) / "objects") + "\n", encoding="utf-8"
+    )
     git(COPY, "add", "-A")
     git(COPY, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qm", "copy")
 
@@ -354,6 +361,69 @@ class RuleFiresTests(CopyTestCase):
         plan["_zz_note"] = f"historically see {rel} for context"
         self.write(REL_PLAN, json.dumps(plan))
         self.assert_fires("K5")
+
+
+class MonographGroundingTests(CopyTestCase):
+    def test_all_five_monographs_are_cited(self):
+        block = load()["block_e_monograph_grounding"]
+        self.assertEqual(
+            sorted(block["required_monographs"]),
+            ["ARCANE", "ECLIPSIS", "MINERVA", "OFE", "VENUS"],
+        )
+        cited = {a["monograph"] for a in block["anchors"]}
+        self.assertEqual(cited, set(block["required_monographs"]))
+
+    def test_k6_fires_when_a_quote_is_paraphrased(self):
+        def fn(d):
+            a = d["block_e_monograph_grounding"]["anchors"][0]
+            a["quote"] = a["quote"].replace("coarsest", "smallest")
+        self.assert_fires("K6", fn)
+
+    def test_k6_fires_when_a_quote_is_attributed_to_the_wrong_monograph(self):
+        def fn(d):
+            for a in d["block_e_monograph_grounding"]["anchors"]:
+                if a["id"] == "VEN_ANCESTRY":
+                    a["monograph"] = "OFE"
+        self.assert_fires("K6", fn)
+
+    def test_k6_fires_when_a_pinned_blob_is_absent(self):
+        def fn(d):
+            d["block_e_monograph_grounding"]["monographs"]["OFE"]["blob"] = "0" * 40
+        self.assert_fires("K6", fn)
+
+    def test_k6_fires_when_a_required_monograph_is_never_cited(self):
+        def fn(d):
+            b = d["block_e_monograph_grounding"]
+            b["anchors"] = [a for a in b["anchors"] if a["monograph"] != "ARCANE"]
+            for row in d["deny_list_enforcement"]:
+                row["monograph_grounds"] = [
+                    g for g in row["monograph_grounds"] if not g.startswith("ARC_")
+                ] or ["OFE_COARSEST"]
+        self.assert_fires("K6", fn)
+
+    def test_k6_fires_on_deny_list_item_without_a_ground(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "STOP":
+                    row["monograph_grounds"] = []
+        self.assert_fires("K6", fn)
+
+    def test_k6_fires_on_a_ground_naming_an_unknown_anchor(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "STOP":
+                    row["monograph_grounds"].append("_".join(["ZZ", "NO", "ANCHOR"]))
+        self.assert_fires("K6", fn)
+
+    def test_mu_f_is_attributed_to_venus_only(self):
+        # mu_F is the author's notation in the Venus monograph; OFE and
+        # Eclipsis use Disc_F / Res_F. An earlier plan proposed "correcting"
+        # mu_F out of the repository as an assistant import, which would have
+        # removed the author's own notation.
+        anchors = load()["block_e_monograph_grounding"]["anchors"]
+        mu = [a for a in anchors if a["id"] == "VEN_MU"]
+        self.assertEqual(len(mu), 1)
+        self.assertEqual(mu[0]["monograph"], "VENUS")
 
 
 class FailClosedTests(CopyTestCase):

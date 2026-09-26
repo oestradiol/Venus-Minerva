@@ -18,6 +18,9 @@ nothing. That is why nothing could refuse the contaminating compression.
                          with whitespace normalized
   K5 RUNTIME_DISPOSITION every capability-specific runtime module carries a
                          disposition
+  K6 MONOGRAPH_GROUNDING every cited monograph quote is present verbatim in the
+                         exact git blob it is pinned to; all five monographs
+                         are cited; every deny-list item has a ground
 
 Comparison is whitespace-normalized throughout. An earlier spaced-form check of
 these same laws reported 13 of 15 absent when they were present without spaces
@@ -372,6 +375,71 @@ def main() -> int:
     else:
         errors.append("K5 RUNTIME_DISPOSITION: phase plan absent")
 
+    # ---- K6: monograph grounding ----------------------------------------------
+    # Quotes are pinned to git blobs, not branch heads: a later edit to a
+    # monograph must not silently change what the constitution cites. A blob
+    # missing from this clone is a finding, not a skip -- a check that passes
+    # because it could not look is the defect class this file exists to catch.
+    block_e = const.get("block_e_monograph_grounding")
+    if block_e is None:
+        errors.append("K6 MONOGRAPH_GROUNDING: block_e_monograph_grounding is absent")
+    else:
+        monos = block_e.get("monographs", {})
+        anchors = block_e.get("anchors", [])
+        ids = {a.get("id") for a in anchors}
+        texts: dict[str, str | None] = {}
+        for name, row in monos.items():
+            cp = subprocess.run(
+                ["git", "cat-file", "-p", row.get("blob", "")], cwd=ROOT,
+                capture_output=True, text=True, check=False,
+            )
+            if cp.returncode != 0:
+                texts[name] = None
+                errors.append(
+                    f"K6 MONOGRAPH_GROUNDING: {name} blob {row.get('blob', '')[:12]} is not "
+                    f"in this clone (fetch origin/{row.get('branch')})"
+                )
+                continue
+            texts[name] = re.sub(r"\s+", " ", cp.stdout)
+            head = subprocess.run(
+                ["git", "rev-parse", f"origin/{row.get('branch')}:{row.get('path')}"],
+                cwd=ROOT, capture_output=True, text=True, check=False,
+            ).stdout.strip()
+            if head and head != row.get("blob"):
+                notes.append(
+                    f"monograph {name} has changed on origin/{row.get('branch')} since it was "
+                    f"pinned; citations still verify against the pinned blob"
+                )
+        for name in block_e.get("required_monographs", []):
+            if name not in monos:
+                errors.append(f"K6 MONOGRAPH_GROUNDING: required monograph {name} is not declared")
+            elif not any(a.get("monograph") == name for a in anchors):
+                errors.append(f"K6 MONOGRAPH_GROUNDING: required monograph {name} is never cited")
+        for a in anchors:
+            text = texts.get(a.get("monograph"))
+            if a.get("monograph") not in monos:
+                errors.append(f"K6 MONOGRAPH_GROUNDING: {a.get('id')} cites undeclared monograph")
+            elif text is not None and re.sub(r"\s+", " ", a.get("quote", "")).strip() not in text:
+                errors.append(
+                    f"K6 MONOGRAPH_GROUNDING: {a.get('id')} quote is not verbatim in "
+                    f"{a.get('monograph')} blob"
+                )
+        for row in const.get("deny_list_enforcement", []):
+            grounds = row.get("monograph_grounds", [])
+            if not grounds:
+                errors.append(f"K6 MONOGRAPH_GROUNDING: deny-list item {row['item']} has no ground")
+            for gid in grounds:
+                if gid not in ids:
+                    errors.append(
+                        f"K6 MONOGRAPH_GROUNDING: {row['item']} cites unknown anchor {gid}"
+                    )
+        for row in const.get("governing_roles_unenforced", []):
+            for gid in row.get("monograph_grounds", []):
+                if gid not in ids:
+                    errors.append(
+                        f"K6 MONOGRAPH_GROUNDING: {row['role']} cites unknown anchor {gid}"
+                    )
+
     # Notes print first and always. They were previously printed only on the
     # passing path, so the whole gap report vanished exactly when something
     # failed -- the moment it matters most.
@@ -391,7 +459,8 @@ def main() -> int:
     print(
         f"CONSTITUTION AUDIT PASS ({len(block_a['laws'])} laws; "
         f"{len(block_b['must_remain_outside'])} deny-list items; "
-        f"{len(role_fields())} role fields; {len(paths)} paths)"
+        f"{len(role_fields())} role fields; {len(paths)} paths; "
+        f"{len((block_e or {}).get('anchors', []))} monograph anchors)"
     )
     print("Enforcement is not correctness: PASS means the boundary is declared and")
     print("checked, not that any claim inside it is true.")

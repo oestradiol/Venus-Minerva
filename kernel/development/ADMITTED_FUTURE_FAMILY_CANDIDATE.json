@@ -5,7 +5,6 @@
   "promotion_authority": false,
   "truth_authority": false,
   "role": "Declare F, the admitted future family, so that mu_F is computable and compression becomes decidable rather than rhetorical.",
-
   "problem": {
     "statement": "Root 1.1-1.4 define consequence equivalence, minimal provenance, meaning, and the compression law entirely in terms of an admitted future family F. F is never declared anywhere in this repository.",
     "formal_consequence": [
@@ -17,7 +16,6 @@
     "what_goes_wrong_without_it": "Every one of those is parameterised by F. With F undeclared, mu_F is not a number and Compress_F is not a rule. Two parties disagreeing about what is gauge are really disagreeing about F, and that disagreement has nowhere to surface.",
     "observed_instance": "In the 2026-09-26 episode an external assistant compressed live planning surfaces into 'derived projections' and demoted a learner-owned capability to a 'non-live prototype'. Structurally it substituted its own F and then applied the compression law correctly with respect to that substituted F. The law was not violated; the parameter was silently replaced. No existing check could detect this, because no declared F existed to compare against."
   },
-
   "law": {
     "compression_admissibility": "A compression is admissible at scope s iff every distinction in F(s) that was separable before the compression remains separable after it.",
     "residual_rule": "A residual is by definition an unclosed distinction that still separates admitted futures. Therefore mu_F(residual) != 0 by construction, and no admissible Compress_F may ever absorb a residual.",
@@ -30,7 +28,6 @@
       "absent_from_F != nonexistent"
     ]
   },
-
   "declaration_schema": {
     "scope": "repository path or subtree the family governs",
     "discriminations": "the questions whose differing answers must remain reachable after any compression at this scope",
@@ -38,7 +35,6 @@
     "inherits": "parent scope whose discriminations also bind here",
     "declared_by": "who declared it; assistant-proposed families are candidates only"
   },
-
   "families": [
     {
       "scope": "kernel/development",
@@ -91,7 +87,6 @@
       ]
     }
   ],
-
   "worked_check": {
     "case": "2026-09-26 external-agent compression of docs/START_HERE.md",
     "claimed": "Reduce the bootstrap to two files; the remaining eleven links are navigation sprawl and therefore gauge.",
@@ -99,7 +94,6 @@
     "verdict_under_declared_F": "INADMISSIBLE",
     "note": "Under the assistant's substituted F, the same compression was admissible. This is the entire point of declaring F."
   },
-
   "residuals": [
     {
       "id": "F_R1",
@@ -116,5 +110,10 @@
       "statement": "F is treated as static. A developing centre's admitted futures should themselves develop, and the mechanism for lawful F-revision is unspecified beyond 'explicit declaration'.",
       "reopening_condition": "Specify what returned evidence licenses widening or narrowing F, distinguishing lawful development of the family from convenient substitution of it."
     }
-  ]
+  ],
+  "notation_source": {
+    "mu_F": "The author's own notation, from the Venus monograph eq:mu (monographs/05_VENUS/main.tex on split/venus, blob b5af39c8): mu_F(x) != 0 iff deleting/changing x changes a lawful future, reachability, or response. Cited as anchor VEN_MU in kernel/CONSTITUTION.json block_e.",
+    "equivalents": "OFE (sec. 2, eq:disc and eq:residual) and Eclipsis (Twelfth instrument) state the same content through Disc_F(C, rho) and Res_F(C) = {rho : Disc_F(C, rho) = 1}, and OFE proves the coarsest-sufficiency and quotient-transport propositions this family relies on. The three monographs use different notation for one relation; none supersedes the others.",
+    "correction": "An earlier assistant plan on 2026-09-26 described mu_F as assistant notation and proposed replacing it with Disc_F/Res_F. That would have removed the author's notation from the repository. It was not done."
+  }
 }
