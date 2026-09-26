@@ -205,7 +205,9 @@
       "key": "R1_SELF_SEALING|scripts/lint_github_markdown.py|6b84d1cf",
       "class": "UNADJUDICATED",
       "note": "The repair episode itself. It restored lint_github_markdown.py to its pre-contamination blob AND made a novel edit to docs/START_HERE.md, a surface that checker guards, in the same episode. An earlier version of this auditor suppressed this finding via an is_restoration bypass. An adversarial review established that across 501 commits that bypass suppressed exactly one finding -- this one -- and that it was unsound twice over: it inspected only the checker while ignoring novel edits to guarded artifacts, and it treated corrupt ancestor blobs as valid restorations, so re-applying a known corruption verbatim would have passed. The bypass is removed and this finding stands.",
-      "reopening_condition": "The partial return already on record: the restored checker was authored by neither the repair author nor the contaminating episode, and it validated the START_HERE edit when make audit passed. That is weaker than an independent return. Close it properly by having a party who did not author the repair confirm the START_HERE dedup against the restored navigation contract."
+      "reopening_condition": "The partial return already on record: the restored checker was authored by neither the repair author nor the contaminating episode, and it validated the START_HERE edit when make audit passed. That is weaker than an independent return. Close it properly by having a party who did not author the repair confirm the START_HERE dedup against the restored navigation contract.",
+      "through": "6b84d1cf",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R2_FENCE_REMOVAL|AGENTS.md|3d9dc269",
@@ -217,7 +219,9 @@
       "key": "R1_SELF_SEALING|scripts/lint_github_markdown.py|cda936eb",
       "class": "CONTAMINATION_ATTESTED_AND_REVERTED",
       "note": "Same episode edited the navigation checker alongside every surface it guards. Reverted by 6b84d1c.",
-      "reopening_condition": "Permanent historical evidence; see entry above."
+      "reopening_condition": "Permanent historical evidence; see entry above.",
+      "through": "578ff9b8",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R3_PREFREEZE_MUTATION|kernel/development/NETWORK_SEMANTIC_TRACE_PREFREEZE.json|f9627d71",
@@ -235,31 +239,41 @@
       "key": "R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|b5896df8",
       "class": "UNADJUDICATED",
       "note": "Safety-matrix checker modified in the same episode as the matrix it guards.",
-      "reopening_condition": "Show an independent return between the checker change and the matrix change, or show the checker change was a restoration. Co-evolution of a checker and its scope under review may be legitimate, but that is a judgement the branch author must record."
+      "reopening_condition": "Show an independent return between the checker change and the matrix change, or show the checker change was a restoration. Co-evolution of a checker and its scope under review may be legitimate, but that is a judgement the branch author must record.",
+      "through": "748e16dd",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|83b69371",
       "class": "UNADJUDICATED",
       "note": "Second occurrence of the same pattern in a different episode.",
-      "reopening_condition": "As above."
+      "reopening_condition": "As above.",
+      "through": "33583a32",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|d01b4d26",
       "class": "UNADJUDICATED",
       "note": "Third occurrence. Recurrence suggests either a structural coupling worth declaring explicitly, or a habit worth breaking.",
-      "reopening_condition": "As above. If the coupling is intended, declare the matrix and its checker as a single admitted unit with an external discriminator, rather than leaving them mutually ratifying."
+      "reopening_condition": "As above. If the coupling is intended, declare the matrix and its checker as a single admitted unit with an external discriminator, rather than leaving them mutually ratifying.",
+      "through": "899ded34",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R1_SELF_SEALING|scripts/lint_github_markdown.py|83b69371",
       "class": "UNADJUDICATED",
       "note": "Navigation checker modified alongside README, ISSUE_ROADMAP, START_HERE and kernel/development/README in one episode, predating the external-agent incident.",
-      "reopening_condition": "Show an independent return, or record that the navigation contract and its surfaces were intentionally co-authored and subsequently validated by a party that did not author them."
+      "reopening_condition": "Show an independent return, or record that the navigation contract and its surfaces were intentionally co-authored and subsequently validated by a party that did not author them.",
+      "through": "d7b496f6",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R1_SELF_SEALING|.github/workflows/minerva-ci.yml|83b69371",
       "class": "UNADJUDICATED",
       "note": "CI workflow modified alongside the Makefile whose targets it invokes.",
-      "reopening_condition": "Likely benign coupling, but confirm the workflow change did not weaken a gate in the same move that the Makefile changed what that gate runs."
+      "reopening_condition": "Likely benign coupling, but confirm the workflow change did not weaken a gate in the same move that the Makefile changed what that gate runs.",
+      "through": "68ab6e0e",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R2_FENCE_REMOVAL|README.md|42ef3134",
@@ -270,26 +284,32 @@
     {
       "key": "R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|97102d98",
       "class": "UNADJUDICATED",
-      "note": "Visible only in CI until the audit window was pinned to UTC. Same shape as the three already-declared autonomy-matrix residuals: paired 'safety:' commits adding matrix rows and 'audit:' commits custody-binding them in the checker, seconds apart (22:24-23:10 UTC-03:00, 2026-09-25).",
-      "reopening_condition": "As for R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|b5896df8. If the coupling is intended, declare the matrix and its checker as a single admitted unit with an external discriminator."
+      "note": "Visible only in CI until the audit window was pinned to UTC. Same shape as the three already-declared autonomy-matrix residuals: paired 'safety:' commits adding matrix rows and 'audit:' commits custody-binding them in the checker, seconds apart (episode 22:24:51-23:14:35 UTC-03:00, 2026-09-25).",
+      "reopening_condition": "As for R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|b5896df8. If the coupling is intended, declare the matrix and its checker as a single admitted unit with an external discriminator.",
+      "through": "5c9ab12d",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R1_SELF_SEALING|scripts/audit_autonomy_safety_matrix.py|fe7fb0cc",
       "class": "UNADJUDICATED",
       "note": "Visible only in CI until the audit window was pinned to UTC. Same paired safety/audit shape, restoring #165 GitHub World-return distinctions and the indexed-center law (23:20 UTC-03:00, 2026-09-25).",
-      "reopening_condition": "As above."
+      "reopening_condition": "As above.",
+      "through": "02def298",
+      "through_note": "Backfilled 2026-09-26 when bounds became mandatory. This episode is closed: it cannot grow, so the bound is its last checker-modifying commit as computed by the auditor."
     },
     {
       "key": "R1_SELF_SEALING|scripts/audit_self_sealing.py|eefdde25",
       "class": "UNADJUDICATED",
-      "note": "This assistant's own commit (eefdde2) modified the self-sealing checker itself and its own scope file in one commit, fixing the timezone defect and declaring the residuals it newly exposed together. Declared rather than bypassed: this branch already learned once (H1-H2) that an is_restoration-style exemption for a checker's own author suppresses exactly the wrong finding. An independent reviewer with no authorship relation to this change should confirm the fix and the declared residuals are not doing each other favors.",
-      "reopening_condition": "Independent adversarial review (Stage 4 of this session) confirms the timezone fix is sound and the three residuals it surfaced are correctly characterized, not manufactured to look resolved."
+      "note": "This assistant's own edits to the self-sealing checker together with its scope file, in one episode: eefdde2 (timezone pin), 3847ecd (empty-window and shallow-clone guards) and 69faa6d (R1 declarations must name a bound; strict ISO offset). The declaration first written for eefdde2 had no bound and silently covered 3847ecd; an independent review found that. Declared, not bypassed.",
+      "reopening_condition": "A reviewer who authored none of eefdde2, 3847ecd or 69faa6d confirms each change strengthens the checker and that the residuals added alongside are correctly characterized.",
+      "through": "69faa6df"
     },
     {
       "key": "R1_SELF_SEALING|scripts/audit_constitution.py|eefdde25",
       "class": "UNADJUDICATED",
-      "note": "This assistant's commit 576145e modified scripts/audit_constitution.py and kernel/CONSTITUTION.json together: it strengthened K1-K5 and, in the same move, reclassified epistemic_role and roadmap_role, replaced the bare descriptive_roles list with reasons, and removed withhold_baseline. The guard edge was armed in eefdde2 specifically so that this change would be surfaced rather than exempted. The removal of withhold_baseline is the part most in need of an independent look: it relaxes a gate, and the stated reason (the ratchet conflicted with autonomous worker commits and was stale at introduction) was judged by the same party that removed it.",
-      "reopening_condition": "A reviewer with no authorship relation to 576145e confirms (a) each strengthened check fails on the defeat named in its test, (b) the two role reclassifications match the fields' actual context, and (c) the replacement for withhold_baseline enforces what the authority-graph axiom states rather than something weaker."
+      "note": "This assistant's own edits to the constitution auditor together with the constitution, in one episode: 576145e (K1-K5; withhold_baseline removed, which relaxes a gate), dfe8930 (K6 monograph grounding), e83b650 (sha256 pins; a law promoted out of known_absent) and 69faa6d (K7 pinned core; strict K2 live routing; K4 exclusions; K6 fit and line checks; PARENT_CUSTODY corrected; the promotion reverted). The declaration first written for 576145e had no bound, so dfe8930 and e83b650 passed without a finding of their own until an independent review found it; e83b650's promotion was one of the things that review then showed to be unwarranted.",
+      "reopening_condition": "A reviewer with no authorship relation to these four commits confirms that each strengthened check fails on the defeat named in its test, that withhold_baseline's replacement enforces the authority-graph axiom (now including pinned live edges), and that the K6 groundings fit their passages in context.",
+      "through": "69faa6df"
     }
   ],
   "withhold_rule": "If the audit window cannot be resolved, or the scope declaration cannot be parsed, the auditor fails closed rather than reporting PASS.",
