@@ -6,50 +6,121 @@ reported PASS over zero commits because a bare date parsed to nothing, the
 other looped forever on a cyclic graph, and a hang is indistinguishable from a
 pass. Neither would have been caught by exercising the happy path.
 
-Every test here mutates a copy of the declaration, asserts the specific rule
-fires, and restores. Run: python3 -m unittest tests/test_constitution_audit.py
+Every mutation runs against a throwaway git copy of the tracked tree, pointed
+at by CONSTITUTION_AUDIT_ROOT. An earlier version of this file mutated the live
+tree and restored it in a finally block, so a run killed mid-test left a
+corrupted constitution and a stray probe file behind.
+
+Run: python3 -m unittest tests/test_constitution_audit.py
 """
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-CONST = ROOT / "kernel/CONSTITUTION.json"
-SCRIPT = ROOT / "scripts/audit_constitution.py"
-TEMP_ROLE_FILE = ROOT / "kernel/development/_TEST_TEMP_ROLE_PROBE.json"
+LIVE = Path(__file__).resolve().parents[1]
+SCRIPT = LIVE / "scripts/audit_constitution.py"
+REL_CONST = "kernel/CONSTITUTION.json"
+REL_PLAN = "kernel/development/VM_INTERNALIZATION_PHASE_PLAN.json"
+
+COPY: Path | None = None
 
 
-def run_audit() -> tuple[int, str]:
+def git(root: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=root, check=True, capture_output=True, text=True
+    ).stdout
+
+
+def setUpModule() -> None:
+    global COPY
+    COPY = Path(tempfile.mkdtemp(prefix="constitution-audit-"))
+    for rel in git(LIVE, "ls-files").split():
+        src = LIVE / rel
+        if not src.is_file():
+            continue
+        dst = COPY / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+    git(COPY, "init", "-q")
+    git(COPY, "add", "-A")
+    git(COPY, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qm", "copy")
+
+
+def tearDownModule() -> None:
+    if COPY is not None:
+        shutil.rmtree(COPY, ignore_errors=True)
+
+
+def run_audit(root: Path | None = None) -> tuple[int, str]:
+    env = dict(os.environ, CONSTITUTION_AUDIT_ROOT=str(root or COPY))
     cp = subprocess.run(
-        [sys.executable, str(SCRIPT)], cwd=ROOT, capture_output=True, text=True, timeout=120
+        [sys.executable, str(SCRIPT)], cwd=LIVE, capture_output=True, text=True,
+        timeout=120, env=env,
     )
     return cp.returncode, cp.stdout + cp.stderr
 
 
 def load() -> dict:
-    return json.loads(CONST.read_text(encoding="utf-8"))
+    return json.loads((COPY / REL_CONST).read_text(encoding="utf-8"))
 
 
-def with_mutation(mutate) -> tuple[int, str]:
-    original = CONST.read_text(encoding="utf-8")
-    try:
-        doc = json.loads(original)
-        mutate(doc)
-        CONST.write_text(json.dumps(doc, indent=2), encoding="utf-8")
+class CopyTestCase(unittest.TestCase):
+    """Restores every file a test touched in the copy, and tracks new ones."""
+
+    def setUp(self) -> None:
+        self._saved: dict[Path, str | None] = {}
+
+    def tearDown(self) -> None:
+        for path, text in self._saved.items():
+            if text is None:
+                path.unlink(missing_ok=True)
+            else:
+                path.write_text(text, encoding="utf-8")
+        git(COPY, "add", "-A")
+
+    def write(self, rel: str, text: str, track: bool = False) -> Path:
+        path = COPY / rel
+        if path not in self._saved:
+            self._saved[path] = path.read_text(encoding="utf-8") if path.exists() else None
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        if track:
+            git(COPY, "add", rel)
+        return path
+
+    def mutate(self, fn) -> tuple[int, str]:
+        doc = load()
+        fn(doc)
+        self.write(REL_CONST, json.dumps(doc, indent=2))
         return run_audit()
-    finally:
-        CONST.write_text(original, encoding="utf-8")
+
+    def assert_fires(self, rule: str, fn=None) -> str:
+        code, out = self.mutate(fn) if fn else run_audit()
+        self.assertEqual(code, 1, f"{rule} did not fail the audit:\n{out}")
+        self.assertTrue(
+            any(line.strip().startswith(rule) for line in out.splitlines()),
+            f"{rule} did not fire:\n{out}",
+        )
+        return out
 
 
-class DeclaredConstitutionTests(unittest.TestCase):
+class DeclaredConstitutionTests(CopyTestCase):
     def test_declared_constitution_passes(self):
         code, out = run_audit()
         self.assertEqual(code, 0, out)
         self.assertIn("CONSTITUTION AUDIT PASS", out)
+
+    def test_live_tree_passes_too(self):
+        # The copy is a faithful stand-in only if the live tree agrees with it.
+        code, out = run_audit(LIVE)
+        self.assertEqual(code, 0, out)
 
     def test_pass_message_denies_that_enforcement_is_correctness(self):
         _, out = run_audit()
@@ -65,62 +136,80 @@ class DeclaredConstitutionTests(unittest.TestCase):
         self.assertFalse(doc["truth_authority"])
 
     def test_unenforced_items_are_visible_not_hidden(self):
-        # The three deny-list items with no enforcing distinction must appear
-        # in normal output. A gap that only shows up on failure is a gap that
-        # gets forgotten.
         _, out = run_audit()
         for item in ("EVALUATOR_CUSTODY", "CLAIM_BINDING_AUTHORITY", "PARENT_CUSTODY"):
             with self.subTest(item=item):
-                self.assertIn(item, out)
+                self.assertIn(f"UNENFORCED by declaration: {item}", out)
+
+    def test_partially_enforced_items_are_visible(self):
+        # Previously only NONE rows were reported, so the two items that
+        # self-declare partial coverage never appeared in any output.
+        _, out = run_audit()
+        for item in ("EVIDENCE_IDENTITY", "O_STAR_EXTERNAL_VALIDATION"):
+            with self.subTest(item=item):
+                self.assertIn(f"PARTIALLY ENFORCED: {item}", out)
 
     def test_governing_but_unenforced_roles_are_visible(self):
         _, out = run_audit()
-        for role in ("crystallizer_role", "lateralizer_role", "internalizer_role"):
+        for role in ("crystallizer_role", "lateralizer_role", "internalizer_role",
+                     "epistemic_role", "roadmap_role"):
             with self.subTest(role=role):
-                self.assertIn(role, out)
+                self.assertIn(f"GOVERNS BUT UNENFORCED: {role}", out)
 
-
-class RuleFiresTests(unittest.TestCase):
-    def assert_fires(self, rule: str, mutate) -> None:
-        code, out = with_mutation(mutate)
-        self.assertEqual(code, 1, f"{rule} did not fail the audit:\n{out}")
-        self.assertTrue(
-            any(line.strip().startswith(rule) for line in out.splitlines()),
-            f"{rule} did not fire:\n{out}",
+    def test_gap_report_survives_a_failing_run(self):
+        # Notes were printed only on the passing path, so the whole gap report
+        # disappeared exactly when something failed.
+        out = self.assert_fires(
+            "K1",
+            lambda d: d["block_b_deny_list"]["must_remain_outside"].append("NEW_UNGOVERNED_ITEM"),
         )
+        self.assertIn("UNENFORCED by declaration: EVALUATOR_CUSTODY", out)
+        self.assertIn("tracked paths unrouted", out)
 
+    def test_audit_does_not_write_to_the_tree_it_audits(self):
+        before = git(COPY, "status", "--porcelain")
+        run_audit()
+        self.assertEqual(git(COPY, "status", "--porcelain"), before)
+
+
+class RuleFiresTests(CopyTestCase):
+    # ---- K4 -----------------------------------------------------------------
     def test_k4_fires_when_a_law_goes_missing_from_the_tree(self):
-        # The probe law is assembled at runtime and never appears as a literal
-        # in this file. CORPUS_DIRS includes tests/, so writing it out plainly
-        # would place it in the very corpus being searched and the check would
-        # find the law inside the test asserting its absence.
+        # Assembled at runtime so the literal never appears in this file,
+        # which is itself part of the corpus being searched.
         probe = "_".join(["ZZPROBE", "LAW"]) + " != " + "_".join(["NOT", "IN", "TREE"])
         self.assert_fires(
             "K4", lambda d: d["block_a_permanent_noncollapse_laws"]["laws"].append(probe)
         )
 
-    def test_k4_fires_when_a_declared_absent_law_reappears(self):
-        # Ratchet in the other direction: a law declared absent that IS present
-        # must be promoted out of known_absent, or the list hides real coverage.
-        def mutate(d):
-            block = d["block_a_permanent_noncollapse_laws"]
-            block["known_absent"].append(
-                {
-                    "law": "CODE_DELETION != INTERNALIZATION",  # present in the tree
-                    "reason": "deliberately wrong, for the test",
-                    "reopening_condition": "n/a",
-                }
-            )
+    def test_k4_does_not_match_a_law_straddling_two_files(self):
+        # The corpus was concatenated and whitespace-stripped, so the tail of
+        # one file and the head of the next could together spell a law that
+        # neither contains.
+        left = "_".join(["ZZSTRADDLE", "LEFT"])
+        right = "_".join(["ZZSTRADDLE", "RIGHT"])
+        self.write("docs/zz_a_straddle.md", f"x\n{left} !=")
+        self.write("docs/zz_b_straddle.md", f"{right}\ny\n")
+        self.assert_fires(
+            "K4",
+            lambda d: d["block_a_permanent_noncollapse_laws"]["laws"].append(f"{left} != {right}"),
+        )
 
-        self.assert_fires("K4", mutate)
+    def test_k4_fires_when_a_declared_absent_law_reappears(self):
+        def fn(d):
+            d["block_a_permanent_noncollapse_laws"]["known_absent"].append(
+                {"law": "CODE_DELETION != INTERNALIZATION", "reason": "wrong on purpose",
+                 "reopening_condition": "n/a"}
+            )
+        self.assert_fires("K4", fn)
 
     def test_k4_fires_when_a_declared_absent_law_gives_no_reason(self):
-        def mutate(d):
+        def fn(d):
             for row in d["block_a_permanent_noncollapse_laws"]["known_absent"]:
                 row["reason"] = ""
+        self.assert_fires("K4", fn)
 
-        self.assert_fires("K4", mutate)
-
+    # ---- K1 -----------------------------------------------------------------
     def test_k1_fires_on_deny_list_item_with_no_enforcement_entry(self):
         self.assert_fires(
             "K1",
@@ -128,109 +217,156 @@ class RuleFiresTests(unittest.TestCase):
         )
 
     def test_k1_fires_on_enforcement_none_without_a_reason(self):
-        def mutate(d):
+        def fn(d):
             for row in d["deny_list_enforcement"]:
                 if row["item"] == "EVALUATOR_CUSTODY":
                     row["reason"] = "   "
-
-        self.assert_fires("K1", mutate)
+        self.assert_fires("K1", fn)
 
     def test_k1_fires_when_named_enforcing_artifact_is_missing(self):
-        def mutate(d):
+        def fn(d):
             for row in d["deny_list_enforcement"]:
                 if row["item"] == "STOP":
                     row["enforced_by"] = "kernel/development/NO_SUCH_FILE.json"
+        self.assert_fires("K1", fn)
 
-        self.assert_fires("K1", mutate)
+    def test_k1_is_not_satisfied_by_pointing_at_any_existing_file(self):
+        # The exact defeat of the previous version: enforced_by only had to
+        # exist, so README.md satisfied it.
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "STOP":
+                    row["enforced_by"] = "README.md"
+        self.assert_fires("K1", fn)
 
+    def test_k1_fires_when_a_cited_distinction_is_not_in_the_matrix(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "STOP":
+                    row["distinctions"].append("_".join(["ZZNO", "SUCH", "DISTINCTION"]))
+        self.assert_fires("K1", fn)
+
+    def test_k1_fires_when_an_enforced_row_cites_nothing(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "STOP":
+                    row["distinctions"] = []
+        self.assert_fires("K1", fn)
+
+    # ---- K3 -----------------------------------------------------------------
     def test_k3_fires_on_a_new_unreferenced_role(self):
-        # The load-bearing rule: a *_role that claims to govern and is bound to
-        # nothing must not pass silently.
-        original = CONST.read_text(encoding="utf-8")
-        TEMP_ROLE_FILE.write_text(
-            json.dumps({"probe_role": "claims to govern and binds to nothing"}),
-            encoding="utf-8",
+        self.write(
+            "kernel/development/_TEST_TEMP_ROLE_PROBE.json",
+            json.dumps({"_".join(["zzprobe", "role"]): "claims to govern and binds to nothing"}),
+            track=True,
         )
-        try:
-            code, out = run_audit()
-            self.assertEqual(code, 1, out)
-            self.assertIn("K3", out)
-            self.assertIn("probe_role", out)
-        finally:
-            TEMP_ROLE_FILE.unlink(missing_ok=True)
-            CONST.write_text(original, encoding="utf-8")
+        out = self.assert_fires("K3")
+        self.assertIn("zzprobe_role", out)
+
+    def test_k3_sees_roles_outside_kernel_and_docs(self):
+        # Role discovery used to scan only kernel/ and docs/, so a role in
+        # autonomy/ or benchmarks/ could not be refused.
+        self.write(
+            "benchmarks/_zz_probe/plan.json",
+            json.dumps({"_".join(["zzfar", "role"]): "governs from outside the scanned dirs"}),
+            track=True,
+        )
+        out = self.assert_fires("K3")
+        self.assertIn("zzfar_role", out)
+
+    def test_k3_fires_on_descriptive_role_without_a_reason(self):
+        self.assert_fires("K3", lambda d: d["descriptive_roles"].__setitem__("mythos_role", " "))
+
+    def test_k3_refuses_a_bare_descriptive_list(self):
+        # A bare list is where epistemic_role and roadmap_role were parked
+        # unexamined although both forbid something.
+        self.assert_fires(
+            "K3", lambda d: d.__setitem__("descriptive_roles", list(d["descriptive_roles"]))
+        )
 
     def test_k3_fires_on_unenforced_role_without_reopening_condition(self):
-        def mutate(d):
+        def fn(d):
             for row in d["governing_roles_unenforced"]:
                 if row["role"] == "crystallizer_role":
                     row["reopening_condition"] = ""
-
-        self.assert_fires("K3", mutate)
+        self.assert_fires("K3", fn)
 
     def test_k3_fires_when_an_unenforced_role_is_actually_referenced(self):
-        # Ratchet: once a role is wired to code it must be promoted out of the
-        # unenforced list, or the list would hide a real check.
-        def mutate(d):
-            d["governing_roles_unenforced"].append(
-                {
-                    "role": "actor_role",  # referenced by executable files today
-                    "claims": "x",
-                    "reopening_condition": "y",
-                }
-            )
-
-        self.assert_fires("K3", mutate)
+        self.assert_fires(
+            "K3",
+            lambda d: d["governing_roles_unenforced"].append(
+                {"role": "actor_role", "claims": "x", "reopening_condition": "y"}
+            ),
+        )
 
     def test_k3_fires_when_a_governing_role_names_a_missing_check(self):
-        def mutate(d):
+        def fn(d):
             d["governing_roles"]["crystallizer_role"] = "scripts/no_such_check.py"
             d["governing_roles_unenforced"] = [
                 r for r in d["governing_roles_unenforced"] if r["role"] != "crystallizer_role"
             ]
+        self.assert_fires("K3", fn)
 
-        self.assert_fires("K3", mutate)
-
-    def test_k2_fires_when_unrouted_paths_exceed_the_baseline(self):
+    # ---- K2 -----------------------------------------------------------------
+    def test_k2_fires_on_routing_edge_to_untracked_path(self):
         self.assert_fires(
-            "K2", lambda d: d["block_c_authority_graph"].__setitem__("withhold_baseline", 0)
+            "K2",
+            lambda d: d["block_c_authority_graph"]["routing"].append(
+                {"path": "kernel/NO_SUCH_LIVE_STATE.md", "class": "LIVE_STATE"}
+            ),
         )
 
-    def test_k2_fires_when_no_baseline_is_declared(self):
+    def test_k2_fires_on_prefix_matching_nothing(self):
         self.assert_fires(
-            "K2", lambda d: d["block_c_authority_graph"].pop("withhold_baseline")
+            "K2",
+            lambda d: d["block_c_authority_graph"]["routing"].append(
+                {"prefix": "no/such/dir/", "class": "IMMUTABLE_EVIDENCE"}
+            ),
         )
 
-    def test_k2_baseline_is_a_ratchet_not_a_target(self):
-        # Shrinking the unrouted surface must never fail; only growth does.
-        code, out = with_mutation(
-            lambda d: d["block_c_authority_graph"].__setitem__("withhold_baseline", 9999)
+    def test_k2_fires_on_undeclared_class(self):
+        self.assert_fires(
+            "K2",
+            lambda d: d["block_c_authority_graph"]["routing"].append(
+                {"path": "Makefile", "class": "SOVEREIGN"}
+            ),
         )
+
+    def test_k2_does_not_fail_when_files_are_added(self):
+        # The removed ratchet failed whenever the unrouted count grew, which
+        # every autonomous worker commit that writes a result file does.
+        self.write("autonomy/evidence/_zz_new_result.json", "{}\n", track=True)
+        code, out = run_audit()
         self.assertEqual(code, 0, out)
 
+    # ---- K5 -----------------------------------------------------------------
+    def test_k5_sees_nested_runtime_modules(self):
+        self.write("kernel/runtime/_zz_sub/zz_probe_module.py", "x = 1\n", track=True)
+        out = self.assert_fires("K5")
+        self.assertIn("zz_probe_module.py", out)
 
-class FailClosedTests(unittest.TestCase):
+    def test_k5_is_not_satisfied_by_a_mention_inside_a_sentence(self):
+        # The previous substring test over the serialized plan accepted any
+        # path that appeared anywhere inside a longer string.
+        rel = "kernel/runtime/zz_mentioned_only.py"
+        self.write(rel, "x = 1\n", track=True)
+        plan = json.loads((COPY / REL_PLAN).read_text(encoding="utf-8"))
+        plan["_zz_note"] = f"historically see {rel} for context"
+        self.write(REL_PLAN, json.dumps(plan))
+        self.assert_fires("K5")
+
+
+class FailClosedTests(CopyTestCase):
     def test_unparseable_constitution_withholds(self):
-        original = CONST.read_text(encoding="utf-8")
-        try:
-            CONST.write_text("{ not json", encoding="utf-8")
-            code, out = run_audit()
-            self.assertEqual(code, 2)
-            self.assertIn("WITHHOLD", out)
-        finally:
-            CONST.write_text(original, encoding="utf-8")
+        self.write(REL_CONST, "{ not json")
+        code, out = run_audit()
+        self.assertEqual(code, 2)
+        self.assertIn("WITHHOLD", out)
 
     def test_wrong_register_withholds(self):
-        original = CONST.read_text(encoding="utf-8")
-        try:
-            doc = json.loads(original)
-            doc["register"] = "CANDIDATE_NOT_ADMITTED"
-            CONST.write_text(json.dumps(doc, indent=2), encoding="utf-8")
-            code, out = run_audit()
-            self.assertEqual(code, 2)
-            self.assertIn("WITHHOLD", out)
-        finally:
-            CONST.write_text(original, encoding="utf-8")
+        code, out = self.mutate(lambda d: d.__setitem__("register", "CANDIDATE_NOT_ADMITTED"))
+        self.assertEqual(code, 2)
+        self.assertIn("WITHHOLD", out)
 
 
 if __name__ == "__main__":

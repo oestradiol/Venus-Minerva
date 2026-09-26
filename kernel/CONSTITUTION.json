@@ -118,8 +118,8 @@
       "GENERATED_RESULT"
     ],
     "defaults": {
-      "Past/**": "IMMUTABLE_EVIDENCE \u2014 never current merely because search found it",
-      "Future/**": "UNADMITTED_FUTURE \u2014 never active merely because it exists",
+      "Past/**": "IMMUTABLE_EVIDENCE — never current merely because search found it",
+      "Future/**": "UNADMITTED_FUTURE — never active merely because it exists",
       "unclassified": "fails closed to WITHHOLD before authority or mutation"
     },
     "past_prohibitions": [
@@ -169,8 +169,7 @@
       }
     ],
     "routing_note": "Deliberately minimal. Only edges that are unambiguous from existing repository convention are declared. Everything else fails closed to WITHHOLD and is counted, not silently passed. Declaring the full routing graph is the branch author's call -- see CONST_G3 -- and an assistant inventing it would be the same overreach this file forbids.",
-    "withhold_baseline": 580,
-    "withhold_baseline_note": "580 of 690 tracked paths are unrouted and therefore fail closed to WITHHOLD. This is a ratchet, not a target: the count may shrink as routing edges are declared, and the audit fails if it grows. It is recorded as a number rather than suppressed so that the size of the unrouted surface is visible in every run."
+    "withhold_baseline_note": "Removed. It was a ratchet on the number of unrouted files: the audit failed whenever that number grew. The canonical law is a classification default (unclassified fails closed to WITHHOLD), not a limit on how many files may exist, and the ratchet would have failed every run of Minerva's autonomous worker, which commits new result files. It was also stale on the commit that introduced it: the count was taken before the auditor and its test were staged, so CI saw 582 against a recorded 580. K2 now enforces that every declared routing edge resolves to a tracked path and names a declared class, and reports the unrouted count on every run."
   },
   "block_d_mutation_protocol": {
     "source": "project source transcript, persisted mandatory form",
@@ -380,15 +379,14 @@
       ]
     }
   ],
-  "descriptive_roles": [
-    "epistemic_role",
-    "published_role",
-    "roadmap_role",
-    "mythos_role",
-    "calibration_role",
-    "actor_role",
-    "event_id_role"
-  ],
+  "descriptive_roles": {
+    "published_role": "Labels what a published physics test is for (IG10 checkpoint, T_Var4 'sensitive coarse/fine RG discriminator'). Describes an external source; permits and forbids nothing.",
+    "calibration_role": "Labels the provenance of calibration labels in the EDU17R1 method family ('EXTERNALLY_RETURNED_PUBLIC_DEVELOPMENT_LABELS'). A source annotation, not a rule.",
+    "mythos_role": "Describes what mythos does inside epistemic_compression ('GENERATIVE_SYMBOLIC_ORGANIZATION'). Its governing sibling is correction_ground, not this field.",
+    "baseline_role": "States that condition A is descriptive context in the EDU17R1 analysis plan; the causal claim is fenced separately by claim_fence.",
+    "actor_role": "Opaque token label (r0, r1, ...) in theater prefreeze fixtures. Referenced by executable evaluators.",
+    "event_id_role": "Opaque token label in theater prefreeze fixtures."
+  },
   "governing_roles": {},
   "governing_roles_unenforced": [
     {
@@ -418,7 +416,22 @@
       "where": "kernel/development/CANONICAL_TELIC_RECOVERY_BOOTSTRAP.json",
       "why_unenforced": "Same gap as crystallizer_role, stated as a status token rather than prose.",
       "reopening_condition": "Same check as crystallizer_role."
+    },
+    {
+      "role": "epistemic_role",
+      "claims": "future-family/work authorization only; not evidence",
+      "where": "kernel/state/IG10_HOT_CHECKPOINT.json (sbranch_self_directed.authorial_input)",
+      "why_unenforced": "States an authorization != evidence noncollapse on the branch author's own input: what the author wants may open work but may not count as a return. No check reads it. This is the deny-list item CLAIM_BINDING_AUTHORITY stated from the other side, and it is unenforced for the same reason.",
+      "reopening_condition": "A check that fails when any verifier receipt or result lists authorial input among its evidence sources."
+    },
+    {
+      "role": "roadmap_role",
+      "claims": "BOUNDED_CONTEXT_HINT",
+      "where": "kernel/development/AUTONOMY_STUDY_GATE_PREFREEZE.json (curriculum_rule)",
+      "why_unenforced": "Paired with roadmap_may_override_returned_outcomes_indefinitely: false, it makes the roadmap non-sovereign over returned outcomes. It sits in a prefreeze; no executable file reads either field.",
+      "reopening_condition": "A check that fails when roadmap order selects work against a returned outcome that changed the work class, per the same prefreeze's returned_outcome_learning_may_change_work_class."
     }
   ],
-  "runtime_disposition_exempt": []
+  "runtime_disposition_exempt": [],
+  "descriptive_roles_note": "Each descriptive role must carry a reason. The earlier bare list parked epistemic_role and roadmap_role here unexamined; both forbid something and have been moved to governing_roles_unenforced."
 }

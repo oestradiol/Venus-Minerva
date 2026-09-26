@@ -278,6 +278,12 @@
       "class": "UNADJUDICATED",
       "note": "Visible only in CI until the audit window was pinned to UTC. Same paired safety/audit shape, restoring #165 GitHub World-return distinctions and the indexed-center law (23:20 UTC-03:00, 2026-09-25).",
       "reopening_condition": "As above."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/audit_self_sealing.py|eefdde25",
+      "class": "UNADJUDICATED",
+      "note": "This assistant's own commit (eefdde2) modified the self-sealing checker itself and its own scope file in one commit, fixing the timezone defect and declaring the residuals it newly exposed together. Declared rather than bypassed: this branch already learned once (H1-H2) that an is_restoration-style exemption for a checker's own author suppresses exactly the wrong finding. An independent reviewer with no authorship relation to this change should confirm the fix and the declared residuals are not doing each other favors.",
+      "reopening_condition": "Independent adversarial review (Stage 4 of this session) confirms the timezone fix is sound and the three residuals it surfaced are correctly characterized, not manufactured to look resolved."
     }
   ],
   "withhold_rule": "If the audit window cannot be resolved, or the scope declaration cannot be parsed, the auditor fails closed rather than reporting PASS.",

@@ -6,10 +6,12 @@ them were enforceable. Nine of eleven *_role fields in this repository are
 referenced by zero executable files: they describe good practice and decline
 nothing. That is why nothing could refuse the contaminating compression.
 
-  K1 DENY_LIST_ENFORCED  every must-remain-outside item is referenced by a live
-                         fence or check, or is declared enforcement: NONE
+  K1 DENY_LIST_ENFORCED  every must-remain-outside item names an enforcing
+                         artifact AND every distinction it cites exists in
+                         that artifact, or it is declared enforcement: NONE
   K2 AUTHORITY_TOTALITY  every tracked path classifies, or fails closed to
-                         WITHHOLD; the WITHHOLD count is ratcheted
+                         WITHHOLD; every declared routing edge resolves to a
+                         tracked path and names a declared class
   K3 NO_PROSE_ONLY_ROLE  a *_role field that claims to govern must name a check
                          referencing it, or be declared descriptive
   K4 LAWS_PRESENT        the permanent noncollapse laws are present, compared
@@ -30,7 +32,9 @@ import re
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+# Tests point this at a throwaway copy. They previously mutated the live
+# tree, so a run killed mid-test left a corrupted constitution behind.
+ROOT = Path(os.environ.get("CONSTITUTION_AUDIT_ROOT") or Path(__file__).resolve().parents[1])
 CONSTITUTION = ROOT / "kernel/CONSTITUTION.json"
 
 # Enforcement lives in checkers and runtime. Tests VERIFY enforcement; they do
@@ -49,7 +53,7 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", "", text).upper()
 
 
-def read_corpus(dirs: tuple[str, ...], exclude: frozenset[Path] = frozenset()) -> str:
+def read_files(dirs: tuple[str, ...], exclude: frozenset[Path] = frozenset()) -> list[str]:
     """Concatenate the tree's text, excluding named files.
 
     CONSTITUTION.json must be excluded when checking whether its own laws are
@@ -57,6 +61,10 @@ def read_corpus(dirs: tuple[str, ...], exclude: frozenset[Path] = frozenset()) -
     part of the tree, so every law it declares is trivially found in itself.
     Caught by this auditor's negative suite, which appended a nonexistent law
     and watched K4 pass.
+
+    Files are returned separately. Concatenating them and then stripping
+    whitespace let a law match across the boundary between two unrelated
+    files: the tail of one and the head of the next.
     """
     chunks: list[str] = []
     for base in dirs:
@@ -71,7 +79,11 @@ def read_corpus(dirs: tuple[str, ...], exclude: frozenset[Path] = frozenset()) -
                     chunks.append(path.read_text(encoding="utf-8", errors="replace"))
                 except OSError:
                     continue
-    return "\n".join(chunks)
+    return chunks
+
+
+def read_corpus(dirs: tuple[str, ...], exclude: frozenset[Path] = frozenset()) -> str:
+    return "\n".join(read_files(dirs, exclude))
 
 
 def tracked_paths() -> list[str]:
@@ -98,18 +110,15 @@ def role_fields() -> dict[str, list[str]]:
             for item in obj:
                 walk(item, path)
 
-    for base in ("kernel", "docs"):
-        for dirpath, _, filenames in os.walk(ROOT / base):
-            if "__pycache__" in dirpath:
-                continue
-            for name in filenames:
-                if not name.endswith(".json"):
-                    continue
-                p = Path(dirpath, name)
-                try:
-                    walk(json.loads(p.read_text(encoding="utf-8")), str(p.relative_to(ROOT)))
-                except (OSError, json.JSONDecodeError):
-                    continue
+    # Every tracked JSON file. Scanning only kernel/ and docs/ missed roles in
+    # autonomy/ and benchmarks/, so K3 could not see them to refuse them.
+    for rel in tracked_paths():
+        if not rel.endswith(".json"):
+            continue
+        try:
+            walk(json.loads((ROOT / rel).read_text(encoding="utf-8")), rel)
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            continue
     return found
 
 
@@ -124,6 +133,31 @@ def classify(path: str, rules: list[dict]) -> str:
     return "WITHHOLD"
 
 
+def json_strings(obj) -> set[str]:
+    """Every string value in a JSON document, for exact-membership checks."""
+    out: set[str] = set()
+    if isinstance(obj, str):
+        out.add(obj)
+    elif isinstance(obj, dict):
+        for value in obj.values():
+            out |= json_strings(value)
+    elif isinstance(obj, list):
+        for value in obj:
+            out |= json_strings(value)
+    return out
+
+
+def matrix_ids(path: Path) -> set[str] | None:
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    rows = doc.get("distinctions") if isinstance(doc, dict) else None
+    if not isinstance(rows, list):
+        return None
+    return {row["id"] for row in rows if isinstance(row, dict) and "id" in row}
+
+
 def main() -> int:
     if not CONSTITUTION.exists():
         print("WITHHOLD: kernel/CONSTITUTION.json is absent")
@@ -136,21 +170,34 @@ def main() -> int:
     if const.get("register") != "LIVE_CONSTITUTION":
         print("WITHHOLD: constitution does not declare register LIVE_CONSTITUTION")
         return 2
+    try:
+        paths = tracked_paths()
+    except RuntimeError as exc:
+        print(f"WITHHOLD: cannot list tracked files: {exc}")
+        return 2
+    tracked = set(paths)
 
     errors: list[str] = []
     notes: list[str] = []
 
-    # Exclude the constitution from its own evidence corpus (see read_corpus).
-    corpus = normalize(read_corpus(CORPUS_DIRS, exclude=frozenset({CONSTITUTION.resolve()})))
+    # Exclude the constitution from its own evidence corpus (see read_files),
+    # and compare each file separately so a law cannot straddle two files.
+    corpus_files = [
+        normalize(text)
+        for text in read_files(CORPUS_DIRS, exclude=frozenset({CONSTITUTION.resolve()}))
+    ]
     code_corpus = read_corpus(CODE_DIRS)
+
+    def present(forms: list[str]) -> bool:
+        wanted = [normalize(f) for f in forms]
+        return any(w in text for text in corpus_files for w in wanted)
 
     # ---- K4: the laws are present -------------------------------------------
     block_a = const["block_a_permanent_noncollapse_laws"]
     declared_absent = {row["law"]: row for row in block_a.get("known_absent", [])}
     equivalents = block_a.get("equivalent_forms", {})
     for law in block_a["laws"]:
-        forms = [law] + list(equivalents.get(law, []))
-        if any(normalize(f) in corpus for f in forms):
+        if present([law] + list(equivalents.get(law, []))):
             continue
         row = declared_absent.get(law)
         if row is None:
@@ -164,19 +211,19 @@ def main() -> int:
             notes.append(f"law stated in constitution only, absent from tree: {law}")
     # A law declared absent that HAS since appeared must be promoted out of the
     # absent list, or the list would hide real coverage.
-    for law, row in declared_absent.items():
-        forms = [law] + list(equivalents.get(law, []))
-        if any(normalize(f) in corpus for f in forms):
+    for law in declared_absent:
+        if present([law] + list(equivalents.get(law, []))):
             errors.append(
                 f"K4 LAWS_PRESENT: {law} is declared absent but IS present in the tree; "
                 f"remove it from known_absent"
             )
 
     # ---- K1: deny-list is enforced or declared unenforced --------------------
+    # The previous version checked only that the named file existed, so
+    # pointing enforced_by at README.md passed. Every distinction a row cites
+    # must now exist as a row id in the artifact it names.
     block_b = const["block_b_deny_list"]
-    enforcement = {
-        row["item"]: row for row in const.get("deny_list_enforcement", [])
-    }
+    enforcement = {row["item"]: row for row in const.get("deny_list_enforcement", [])}
     for item in block_b["must_remain_outside"]:
         row = enforcement.get(item)
         if row is None:
@@ -190,25 +237,58 @@ def main() -> int:
             if not str(row.get("reason", "")).strip():
                 errors.append(f"K1 DENY_LIST_ENFORCED: {item} declares NONE without a reason")
             else:
-                notes.append(f"unenforced by declaration: {item}")
+                notes.append(f"UNENFORCED by declaration: {item}")
             continue
         ref = row.get("enforced_by", "")
+        cited = list(row.get("distinctions", []))
         if not ref:
             errors.append(f"K1 DENY_LIST_ENFORCED: {item} names no enforcing artifact")
-        elif not (ROOT / ref).exists():
+            continue
+        if not (ROOT / ref).exists():
             errors.append(f"K1 DENY_LIST_ENFORCED: {item} names missing artifact {ref}")
+            continue
+        if not cited:
+            errors.append(
+                f"K1 DENY_LIST_ENFORCED: {item} names {ref} but cites no distinction in it"
+            )
+            continue
+        ids = matrix_ids(ROOT / ref)
+        if ids is None:
+            errors.append(
+                f"K1 DENY_LIST_ENFORCED: {item} names {ref}, which carries no "
+                f"distinctions list to cite"
+            )
+            continue
+        missing = [d for d in cited if d not in ids]
+        if missing:
+            errors.append(
+                f"K1 DENY_LIST_ENFORCED: {item} cites distinction(s) absent from "
+                f"{ref}: {', '.join(missing)}"
+            )
+            continue
+        # A row that self-declares partial coverage is surfaced every run.
+        # Previously only NONE rows were visible, so the advertised count of
+        # unenforced items silently excluded the partially enforced ones.
+        note = str(row.get("note", ""))
+        if note.upper().startswith("PARTIAL"):
+            notes.append(f"PARTIALLY ENFORCED: {item} — {note.split('.')[0]}")
 
     # ---- K3: no prose-only governing role ------------------------------------
-    descriptive = set(const.get("descriptive_roles", []))
+    # descriptive_roles must give a reason per role. A bare list was a place
+    # to park a governing role unexamined, which is the hole K3 closes.
+    descriptive = const.get("descriptive_roles", {})
+    if not isinstance(descriptive, dict):
+        errors.append("K3 NO_PROSE_ONLY_ROLE: descriptive_roles must map each role to a reason")
+        descriptive = {}
+    for field, reason in descriptive.items():
+        if not str(reason).strip():
+            errors.append(f"K3 NO_PROSE_ONLY_ROLE: {field} declared descriptive without a reason")
     governing = const.get("governing_roles", {})
-    unenforced = {
-        row["role"]: row for row in const.get("governing_roles_unenforced", [])
-    }
+    unenforced = {row["role"]: row for row in const.get("governing_roles_unenforced", [])}
     for field, files in sorted(role_fields().items()):
         if field in code_corpus:
             continue
         if field in descriptive:
-            notes.append(f"descriptive, not governing: {field}")
             continue
         claim = governing.get(field)
         if claim:
@@ -228,16 +308,13 @@ def main() -> int:
                     f"reopening condition"
                 )
             else:
-                notes.append(f"GOVERNS BUT UNENFORCED: {field} — {row.get('claims','')}")
+                notes.append(f"GOVERNS BUT UNENFORCED: {field} — {row.get('claims', '')}")
             continue
         errors.append(
             f"K3 NO_PROSE_ONLY_ROLE: {field} ({', '.join(files[:2])}) is referenced by no "
             f"executable file and is neither declared descriptive, bound to a check, nor "
             f"declared governing-but-unenforced with a reopening condition"
         )
-
-    # A role declared unenforced that has since been wired up must be promoted,
-    # not left in the unenforced list where it would hide a real check.
     for field in sorted(unenforced):
         if field in code_corpus:
             errors.append(
@@ -245,45 +322,49 @@ def main() -> int:
                 f"referenced by code; move it to governing_roles"
             )
 
-    # ---- K2: authority totality, ratcheted ------------------------------------
+    # ---- K2: authority totality ----------------------------------------------
+    # The canonical law is a classification default: an unrouted path is
+    # WITHHOLD, never authority. It is not a limit on how many files exist.
+    # The previous ratchet failed whenever any file was added, including the
+    # result files Minerva's own autonomous worker commits, and was stale on
+    # the very commit that introduced it (the auditor and its test were
+    # counted after the number was recorded). What K2 enforces instead is
+    # that the declared graph is real: every edge resolves and names a
+    # declared class. The unrouted count is reported every run.
     block_c = const["block_c_authority_graph"]
     rules = block_c.get("routing", [])
-    try:
-        paths = tracked_paths()
-    except RuntimeError as exc:
-        print(f"WITHHOLD: cannot list tracked files: {exc}")
-        return 2
+    classes = set(block_c.get("classes", []))
+    for rule in rules:
+        cls = rule.get("class")
+        if cls not in classes:
+            errors.append(f"K2 AUTHORITY_TOTALITY: routing edge names undeclared class {cls!r}")
+        if rule.get("path") and rule["path"] not in tracked:
+            errors.append(f"K2 AUTHORITY_TOTALITY: routing edge to untracked path {rule['path']}")
+        if rule.get("prefix") and not any(p.startswith(rule["prefix"]) for p in paths):
+            errors.append(
+                f"K2 AUTHORITY_TOTALITY: routing prefix {rule['prefix']} matches no tracked path"
+            )
+        if not rule.get("path") and not rule.get("prefix"):
+            errors.append("K2 AUTHORITY_TOTALITY: routing edge names neither path nor prefix")
     withheld = [p for p in paths if classify(p, rules) == "WITHHOLD"]
-    baseline = block_c.get("withhold_baseline")
-    if baseline is None:
-        errors.append("K2 AUTHORITY_TOTALITY: no withhold_baseline declared")
-    elif len(withheld) > baseline:
-        errors.append(
-            f"K2 AUTHORITY_TOTALITY: {len(withheld)} unclassified paths exceeds "
-            f"declared baseline {baseline}. Unclassified fails closed to WITHHOLD; "
-            f"the count may shrink but never silently grow."
-        )
-    else:
-        notes.append(
-            f"{len(withheld)}/{len(paths)} paths unrouted, failing closed to WITHHOLD "
-            f"(baseline {baseline})"
-        )
+    notes.append(
+        f"{len(withheld)}/{len(paths)} tracked paths unrouted; each fails closed to "
+        f"WITHHOLD and carries no authority"
+    )
 
     # ---- K5: runtime disposition ---------------------------------------------
+    # Exact match against string values in the plan, recursively. The previous
+    # substring test over the serialized plan accepted any path that merely
+    # prefixed a longer string, and the glob ignored subdirectories.
     plan_path = ROOT / "kernel/development/VM_INTERNALIZATION_PHASE_PLAN.json"
     if plan_path.exists():
-        plan = json.loads(plan_path.read_text(encoding="utf-8"))
-        blob = json.dumps(plan)
+        values = json_strings(json.loads(plan_path.read_text(encoding="utf-8")))
         exempt = set(const.get("runtime_disposition_exempt", []))
-        undisposed = []
-        for p in sorted(Path(ROOT, "kernel/runtime").glob("*.py")):
-            rel = str(p.relative_to(ROOT))
-            if p.name == "__init__.py" or rel in exempt:
+        for p in sorted(Path(ROOT, "kernel/runtime").rglob("*.py")):
+            rel = p.relative_to(ROOT).as_posix()
+            if p.name == "__init__.py" or rel in exempt or "__pycache__" in rel:
                 continue
-            if rel not in blob:
-                undisposed.append(rel)
-        if undisposed:
-            for rel in undisposed:
+            if rel not in values:
                 errors.append(
                     f"K5 RUNTIME_DISPOSITION: {rel} has no disposition in "
                     f"VM_INTERNALIZATION_PHASE_PLAN.json"
@@ -291,7 +372,13 @@ def main() -> int:
     else:
         errors.append("K5 RUNTIME_DISPOSITION: phase plan absent")
 
+    # Notes print first and always. They were previously printed only on the
+    # passing path, so the whole gap report vanished exactly when something
+    # failed -- the moment it matters most.
+    for note in notes:
+        print(f"  note: {note}")
     if errors:
+        print()
         print(f"CONSTITUTION AUDIT FINDINGS ({len(errors)})")
         for item in errors:
             print(f"  {item}")
@@ -301,8 +388,6 @@ def main() -> int:
         print("with a reason so the gap is visible rather than assumed closed.")
         return 1
 
-    for note in notes:
-        print(f"  note: {note}")
     print(
         f"CONSTITUTION AUDIT PASS ({len(block_a['laws'])} laws; "
         f"{len(block_b['must_remain_outside'])} deny-list items; "
