@@ -112,8 +112,8 @@ than their names.
 
 **What the red hid.** `scripts/run_minerva_tests.py` stops at the first failing
 file. At `f79b332` it ran 29 of 106 selected test files. After the repair all
-106 run: 638 tests at `312ca99`, 665 by the end of this session as tests
-were added, all passing.
+106 run: 638 tests at `312ca99`, 673 at `afd5a5d` as tests were added, all
+passing.
 
 **Why it is time-sensitive.** `main`'s scheduled Minerva worker checks out
 `split/minerva` and runs `make audit` daily at 07:43 UTC. Its last run (12:28

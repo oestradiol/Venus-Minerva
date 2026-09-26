@@ -300,16 +300,46 @@
     {
       "key": "R1_SELF_SEALING|scripts/audit_self_sealing.py|eefdde25",
       "class": "UNADJUDICATED",
-      "note": "This assistant's own edits to the self-sealing checker together with its scope file, in one episode: eefdde2 (timezone pin), 3847ecd (empty-window and shallow-clone guards) and 69faa6d (R1 declarations must name a bound; strict ISO offset). The declaration first written for eefdde2 had no bound and silently covered 3847ecd; an independent review found that. Declared, not bypassed.",
+      "note": "This assistant's own edits to the self-sealing checker together with its scope file, in one episode: eefdde2 (timezone pin), 3847ecd (empty-window and shallow-clone guards) 69faa6d (R1 declarations must name a bound; strict ISO offset) and afd5a5d (R1 counts any checker touch; R3 covers deletion and rename; bounds may not be self-set). The declaration first written for eefdde2 had no bound and silently covered 3847ecd; an independent review found that. Declared, not bypassed.",
       "reopening_condition": "A reviewer who authored none of eefdde2, 3847ecd or 69faa6d confirms each change strengthens the checker and that the residuals added alongside are correctly characterized.",
-      "through": "69faa6df"
+      "through": "afd5a5db",
+      "awaiting": "A bound set by a party other than its covered author. Until the branch author (or another reviewer) edits this row, the auditor reports it as self-bound and fails. That is intended."
     },
     {
       "key": "R1_SELF_SEALING|scripts/audit_constitution.py|eefdde25",
       "class": "UNADJUDICATED",
-      "note": "This assistant's own edits to the constitution auditor together with the constitution, in one episode: 576145e (K1-K5; withhold_baseline removed, which relaxes a gate), dfe8930 (K6 monograph grounding), e83b650 (sha256 pins; a law promoted out of known_absent) and 69faa6d (K7 pinned core; strict K2 live routing; K4 exclusions; K6 fit and line checks; PARENT_CUSTODY corrected; the promotion reverted). The declaration first written for 576145e had no bound, so dfe8930 and e83b650 passed without a finding of their own until an independent review found it; e83b650's promotion was one of the things that review then showed to be unwarranted.",
+      "note": "This assistant's own edits to the constitution auditor together with the constitution, in one episode: 576145e (K1-K5; withhold_baseline removed, which relaxes a gate), dfe8930 (K6 monograph grounding), e83b650 (sha256 pins; a law promoted out of known_absent) and 69faa6d (K7 pinned core; strict K2 live routing; K4 exclusions; K6 fit and line checks; PARENT_CUSTODY corrected; the promotion reverted). The declaration first written for 576145e had no bound, so dfe8930 and e83b650 passed without a finding of their own until an independent review found it; e83b650's promotion was one of the things that review then showed to be unwarranted. afd5a5d then added the protected-core digest and word-bounded item matching after a second review.",
       "reopening_condition": "A reviewer with no authorship relation to these four commits confirms that each strengthened check fails on the defeat named in its test, that withhold_baseline's replacement enforces the authority-graph axiom (now including pinned live edges), and that the K6 groundings fit their passages in context.",
-      "through": "69faa6df"
+      "through": "afd5a5db",
+      "awaiting": "A bound set by a party other than its covered author, as above."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/lint_minerva_markdown.py|83b69371",
+      "class": "UNADJUDICATED",
+      "through": "23c37fbf",
+      "note": "Visible only after R1 began counting any touch of an existing checker (afd5a5d). The checker was introduced at 9f28d04 (00:49:46 UTC-03:00, 2026-09-26) and modified 42 seconds later at 23c37fb ('load shared linter by file path') in the episode that also edited README.md and docs/START_HERE.md. The old rule treated add-then-modify as bootstrap.",
+      "reopening_condition": "The branch author confirms whether the post-introduction edit changed what the checker accepts in a way the co-edited scope then relied on, or records it as legitimate co-development."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/audit_minerva_causal_distinctions.py|83b69371",
+      "class": "UNADJUDICATED",
+      "through": "8e36a30e",
+      "note": "Visible only after afd5a5d. Introduced at a2e1b66 (00:52:59) and modified two minutes later at 8e36a30 ('accept explicit sibling-qualified causal custody') alongside its scope file and the historical matrix. The later edit relaxes what the checker accepts.",
+      "reopening_condition": "The branch author confirms whether the post-introduction edit changed what the checker accepts in a way the co-edited scope then relied on, or records it as legitimate co-development."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/audit_minerva_construct_dispositions.py|83b69371",
+      "class": "UNADJUDICATED",
+      "through": "c1057466",
+      "note": "Visible only after afd5a5d. Introduced at e43e734 (00:54:04) and modified 57 seconds later at c105746 ('accept explicit sibling-qualified construct custody') alongside its scope file. The later edit relaxes what the checker accepts.",
+      "reopening_condition": "The branch author confirms whether the post-introduction edit changed what the checker accepts in a way the co-edited scope then relied on, or records it as legitimate co-development."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/audit_self_sealing.py|cf17e3ba",
+      "class": "UNADJUDICATED",
+      "through": "176af88a",
+      "note": "Visible only after afd5a5d. The earlier 2026-09-26 assistant session, committing as Elaina, introduced this auditor at cf17e3b and modified it at 176af88 ('remove self-serving bypass found by adversarial review') together with its scope file, in the same episode. The modification followed an independent review, which is the right direction; it is declared because R1 cannot tell that from the reverse.",
+      "reopening_condition": "The branch author confirms whether the post-introduction edit changed what the checker accepts in a way the co-edited scope then relied on, or records it as legitimate co-development."
     }
   ],
   "withhold_rule": "If the audit window cannot be resolved, or the scope declaration cannot be parsed, the auditor fails closed rather than reporting PASS.",
@@ -320,9 +350,10 @@
   ],
   "known_limitations": [
     "R1 precision is poor for long sessions. Episodes group by author and a 1800s gap, so the largest episode on this branch is 308 commits and R1 can fire on a checker and a guarded file touched hours apart for unrelated reasons. R1 is a prompt to look, not a verdict.",
-    "R1 and R3 key on status M, so deleting a checker or deleting a prefrozen artifact fires nothing.",
     "R2 follows the post-rename path only, so renaming a fence surface evades it.",
-    "audit_since is a hard floor at 2026-09-26T00:00:00+00:00 and hides all earlier history. It never advances, so it is forward-safe, but history before that instant has never been scanned by this tool."
+    "audit_since is a hard floor at 2026-09-26T00:00:00+00:00 and hides all earlier history. It never advances, so it is forward-safe, but history before that instant has never been scanned by this tool.",
+    "R1 now counts any touch of an existing checker (modify, delete, rename, re-add); only a checker's first-ever introduction in an episode with no deletion is bootstrap. R3 fires on modifying, deleting or renaming a prefrozen artifact unless its exact blob survives elsewhere in the same commit's tree.",
+    "Episodes group by author name. A commit by another author, or a forged --author, splits an episode, and the requirement that a residual's bound be set by someone other than the covered author also relies on author names. Both are recorded as SIX_8."
   ],
   "fence_tokens_note": "Section C of the session ledger listed roughly 25 fences while only 16 were watched. Extended to cover the unwatched remainder plus fences recovered from the Canonical archive during the 2026-09-26 lineage and extraction passes. A token that appears nowhere in the tree is harmless: R2 only fires on deletion.",
   "audit_since_note": "Pinned with an explicit UTC offset. The earlier bare value '2026-09-26 00:00' was resolved by git in the local timezone of whichever machine ran the audit: UTC-03:00 on the author's machine, UTC in GitHub CI. CI therefore saw three more hours of history, three extra findings, and failed on every push of the repair (runs 631 and 632), while every local run reported exit 0. The window was pinned to what CI had always measured rather than to what the laptop measured, so no finding the gate had already reported is removed. The auditor now refuses an audit_since without an explicit offset."

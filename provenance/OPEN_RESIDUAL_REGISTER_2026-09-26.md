@@ -119,6 +119,7 @@ Evidence in `provenance/SIX_BRANCH_AUDIT_2026-09-26.md`.
 | `SIX_6` | Squash-merging the repair branch would rewrite the SHAs that key the declared self-sealing residuals, and the auditor would fail closed. | Merged by fast-forward or merge commit; or keys re-declared by a party who did not author them. |
 | `SIX_7` | K3 counts a role named in a code comment as "referenced by code"; K5 accepts a runtime path mentioned anywhere in the phase plan. Both checks are still weaker than their names. | K3 requires a reference outside comments and strings; K5 requires the path as a disposition entry, not any string value. |
 | `SIX_8` | R1 groups episodes by author name, so an interleaved commit by another author, or a forged `--author`, resets the episode and evades R1. Present before 2026-09-26. | R1 considers checker and guarded-file changes across a time window regardless of author, or requires signed commits. |
+| `SIX_9` | **Blocks CI on this branch.** The two self-sealing residuals keyed `eefdde25` cover this session's own edits to both auditors, and their bounds were set by the same author. The auditor now refuses that, so `make audit` fails with exactly these two findings until someone else confirms them. | The branch author reviews the covered commits (listed in each row's note) and edits each row, e.g. adding `"confirmed_by"`. That one commit, by a different author, clears both. |
 
 ---
 
