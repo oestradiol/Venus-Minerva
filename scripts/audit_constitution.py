@@ -19,8 +19,11 @@ nothing. That is why nothing could refuse the contaminating compression.
   K5 RUNTIME_DISPOSITION every capability-specific runtime module carries a
                          disposition
   K6 MONOGRAPH_GROUNDING every cited monograph quote is present verbatim in the
-                         exact git blob it is pinned to; all five monographs
-                         are cited; every deny-list item has a ground
+                         exact git blob it is pinned to, at the line it names;
+                         all five monographs are cited; every deny-list item
+                         has a ground, and each anchor it cites names that item
+  K7 CORE_PINNED         the laws, deny-list items and enforced items pinned in
+                         THIS FILE are still declared, and still enforced
 
 Comparison is whitespace-normalized throughout. An earlier spaced-form check of
 these same laws reported 13 of 15 absent when they were present without spaces
@@ -49,6 +52,62 @@ CONSTITUTION = ROOT / "kernel/CONSTITUTION.json"
 # made them all look enforced.
 CODE_DIRS = ("scripts", "kernel/runtime")
 CORPUS_DIRS = ("kernel", "docs", "provenance", "scripts", "tests")
+# K4 asks whether the tree carries each law. Two places cannot count:
+# tests/, because a test asserting a law is present would satisfy the check it
+# tests; and provenance/canonical-extracts/, because vendoring the source text
+# the constitution was transcribed from makes every law "present" at once --
+# K4 would then compare the constitution with its own origin. Both were found
+# by an independent review, the second after it had already let a declared-
+# absent law be promoted without its reopening condition being met.
+CORPUS_EXCLUDE = ("tests/", "provenance/canonical-extracts/")
+
+# The protected core is pinned HERE, in the checker, not in the JSON it
+# checks. Deleting a law or deny-list item, or downgrading an enforced item to
+# NONE, then requires editing this file together with the constitution, which
+# the self-sealing auditor's R1 rule surfaces. Before this, deleting TRUST_ROOT
+# or a law from the JSON alone passed every check. Additions need no edit here.
+PINNED_LAWS = (
+    "fewer parts != fewer distinctions",
+    "CODE_DELETION != INTERNALIZATION",
+    "STATE_OWNERSHIP != GENERALIZATION",
+    "ABSTRACTION != CAUSAL_USE",
+    "CAUSAL_USE != INTERNALIZATION",
+    "SOURCE_REMOVAL != INDEPENDENT_EVALUATION",
+    "INTERNALIZATION != PROMOTION",
+    "INTERNALIZE_COMPETENCE != INTERNALIZE_CORRECTION_SOVEREIGNTY",
+    "GENERATE != DIMENSIONALIZE != LATERALIZE != CRYSTALLIZE_F != INTERNALIZE",
+    "LEXICAL_GROUNDING != THEATER_BINDING",
+    "RELATION_CLASSIFICATION != PARTICIPANT/KFS_RECONSTRUCTION",
+    "DISCOURSE_PRESENTATION_ORDER != EVENT/HISTORY_ORDER",
+    "NETWORK_MEMORY_CHANGES_LATER_QUERY != USEFUL_RELATIONAL_RECONSTRUCTION",
+    "RETURN_SIGN != CAUSAL_CREDIT",
+    "CONFIG_UTILITY != GLOBAL_CONFIG_TRUTH",
+    "DUPLICATE_EVENT != NEW_EVIDENCE",
+    "ABSENCE_OF_RETURN != NEGATIVE_RETURN",
+)
+PINNED_DENY_ITEMS = (
+    "WORLD_OTHER", "FRESH_WORLD_RETURN", "EVIDENCE_IDENTITY", "EVALUATOR_CUSTODY",
+    "TRUST_ROOT", "AUTHORIZATION", "JURISDICTION", "CLAIM_BINDING_AUTHORITY", "STOP",
+    "WITHHOLD_SAFETY_LAW", "ROLLBACK", "PARENT_CUSTODY",
+    "ANTI_MINERVA_CORRECTION_PERMEABILITY", "O_STAR_EXTERNAL_VALIDATION",
+    "HARD_SUBSTRATE_CAPABILITY_LIMITS",
+)
+PINNED_ENFORCED = (
+    "WORLD_OTHER", "FRESH_WORLD_RETURN", "EVIDENCE_IDENTITY", "TRUST_ROOT",
+    "AUTHORIZATION", "JURISDICTION", "STOP", "WITHHOLD_SAFETY_LAW", "ROLLBACK",
+    "PARENT_CUSTODY", "ANTI_MINERVA_CORRECTION_PERMEABILITY",
+    "O_STAR_EXTERNAL_VALIDATION", "HARD_SUBSTRATE_CAPABILITY_LIMITS",
+)
+# Live authority is the most sensitive routing there is, so its edges are
+# pinned exactly. A new live surface needs an edit here; a prefix may never
+# route into a LIVE class.
+PINNED_LIVE_EDGES = frozenset({
+    ("kernel/CONSTITUTION.json", "LIVE_CONSTITUTION"),
+    ("kernel/CURRENT_STATE.md", "LIVE_STATE"),
+    ("AGENTS.md", "LIVE_ROUTING"),
+    ("README.md", "LIVE_ROUTING"),
+    ("docs/START_HERE.md", "LIVE_ROUTING"),
+})
 TEXT_EXT = (".json", ".md", ".py", ".yml", ".yaml", ".tex")
 
 
@@ -78,6 +137,9 @@ def read_files(dirs: tuple[str, ...], exclude: frozenset[Path] = frozenset()) ->
             for name in filenames:
                 path = Path(dirpath, name)
                 if not name.endswith(TEXT_EXT) or path.resolve() in exclude:
+                    continue
+                rel = path.relative_to(ROOT).as_posix()
+                if dirs is CORPUS_DIRS and rel.startswith(CORPUS_EXCLUDE):
                     continue
                 try:
                     chunks.append(path.read_text(encoding="utf-8", errors="replace"))
@@ -117,7 +179,9 @@ def role_fields() -> dict[str, list[str]]:
     # Every tracked JSON file. Scanning only kernel/ and docs/ missed roles in
     # autonomy/ and benchmarks/, so K3 could not see them to refuse them.
     for rel in tracked_paths():
-        if not rel.endswith(".json"):
+        # The constitution names roles in order to classify them; counting its
+        # own keys as role fields inflated the total and classified nothing.
+        if not rel.endswith(".json") or rel == "kernel/CONSTITUTION.json":
             continue
         try:
             walk(json.loads((ROOT / rel).read_text(encoding="utf-8")), rel)
@@ -186,9 +250,19 @@ def main() -> int:
 
     # Exclude the constitution from its own evidence corpus (see read_files),
     # and compare each file separately so a law cannot straddle two files.
+    # Excluded from their own evidence: the constitution (every law would be
+    # found in itself) and this checker, which pins the laws in PINNED_LAWS and
+    # so would satisfy K4 for all of them. The second was introduced by the
+    # fix that added the pin and caught before commit.
     corpus_files = [
         normalize(text)
-        for text in read_files(CORPUS_DIRS, exclude=frozenset({CONSTITUTION.resolve()}))
+        for text in read_files(
+            CORPUS_DIRS,
+            exclude=frozenset({
+                CONSTITUTION.resolve(),
+                (ROOT / "scripts/audit_constitution.py").resolve(),
+            }),
+        )
     ]
     code_corpus = read_corpus(CODE_DIRS)
 
@@ -358,6 +432,32 @@ def main() -> int:
                 )
         if not rule.get("path") and not rule.get("prefix"):
             errors.append("K2 AUTHORITY_TOTALITY: routing edge names neither path nor prefix")
+    live = {
+        (rule.get("path") or rule.get("prefix"), rule.get("class"))
+        for rule in rules if str(rule.get("class", "")).startswith("LIVE_")
+    }
+    for rule in rules:
+        if str(rule.get("class", "")).startswith("LIVE_") and rule.get("prefix"):
+            errors.append(
+                f"K2 AUTHORITY_TOTALITY: prefix {rule['prefix']} routed into "
+                f"{rule['class']}; live authority is granted per file, never by location"
+            )
+    for edge in sorted(live - PINNED_LIVE_EDGES):
+        errors.append(f"K2 AUTHORITY_TOTALITY: unpinned live edge {edge[0]} -> {edge[1]}")
+    for edge in sorted(PINNED_LIVE_EDGES - live):
+        errors.append(f"K2 AUTHORITY_TOTALITY: pinned live edge missing: {edge[0]} -> {edge[1]}")
+    # First match wins in classify(), so an earlier edge can silently override
+    # a later one. Refuse any edge an earlier edge already covers.
+    for i, rule in enumerate(rules):
+        target = rule.get("path") or rule.get("prefix") or ""
+        for earlier in rules[:i]:
+            if earlier.get("prefix") and target.startswith(earlier["prefix"]):
+                errors.append(
+                    f"K2 AUTHORITY_TOTALITY: edge {target} is shadowed by earlier "
+                    f"prefix {earlier['prefix']}"
+                )
+            elif earlier.get("path") and earlier["path"] == target:
+                errors.append(f"K2 AUTHORITY_TOTALITY: duplicate edge {target}")
     withheld = [p for p in paths if classify(p, rules) == "WITHHOLD"]
     notes.append(
         f"{len(withheld)}/{len(paths)} tracked paths unrouted; each fails closed to "
@@ -397,6 +497,7 @@ def main() -> int:
         anchors = block_e.get("anchors", [])
         ids = {a.get("id") for a in anchors}
         texts: dict[str, str | None] = {}
+        raw: dict[str, str | None] = {}
         for name, row in monos.items():
             cp = subprocess.run(
                 ["git", "cat-file", "-p", row.get("blob", "")], cwd=ROOT,
@@ -410,10 +511,13 @@ def main() -> int:
                 )
                 continue
             texts[name] = re.sub(r"\s+", " ", cp.stdout)
-            head = subprocess.run(
-                ["git", "rev-parse", f"origin/{row.get('branch')}:{row.get('path')}"],
+            raw[name] = cp.stdout
+            ref = subprocess.run(
+                ["git", "rev-parse", "--verify", "--quiet",
+                 f"origin/{row.get('branch')}:{row.get('path')}"],
                 cwd=ROOT, capture_output=True, text=True, check=False,
-            ).stdout.strip()
+            )
+            head = ref.stdout.strip() if ref.returncode == 0 else ""
             if head and head != row.get("blob"):
                 notes.append(
                     f"monograph {name} has changed on origin/{row.get('branch')} since it was "
@@ -433,14 +537,41 @@ def main() -> int:
                     f"K6 MONOGRAPH_GROUNDING: {a.get('id')} quote is not verbatim in "
                     f"{a.get('monograph')} blob"
                 )
+            elif raw.get(a.get("monograph")) is not None:
+                # The quote must begin on the named line: it is found in the
+                # text from that line on, and not in the text from the next.
+                lines = raw[a["monograph"]].splitlines()
+                n = int(a.get("line", 0))
+                q = re.sub(r"\s+", " ", a.get("quote", "")).strip()
+                here = re.sub(r"\s+", " ", " ".join(lines[n - 1:n + 7])) if n >= 1 else ""
+                after = re.sub(r"\s+", " ", " ".join(lines[n:n + 7])) if n >= 1 else ""
+                if not (1 <= n <= len(lines)) or q not in here or q in after:
+                    errors.append(
+                        f"K6 MONOGRAPH_GROUNDING: {a.get('id')} does not start at "
+                        f"{a.get('monograph')} line {n}"
+                    )
         for row in const.get("deny_list_enforcement", []):
             grounds = row.get("monograph_grounds", [])
-            if not grounds:
-                errors.append(f"K6 MONOGRAPH_GROUNDING: deny-list item {row['item']} has no ground")
+            if not grounds and not str(row.get("no_monograph_ground", "")).strip():
+                errors.append(
+                    f"K6 MONOGRAPH_GROUNDING: deny-list item {row['item']} has no ground "
+                    f"and no stated reason why none exists"
+                )
+            elif not grounds:
+                notes.append(f"NO MONOGRAPH GROUND: {row['item']}")
+            by_id = {a.get("id"): a for a in anchors}
             for gid in grounds:
                 if gid not in ids:
                     errors.append(
                         f"K6 MONOGRAPH_GROUNDING: {row['item']} cites unknown anchor {gid}"
+                    )
+                elif row["item"] not in str(by_id[gid].get("grounds", "")):
+                    # A row may only cite an anchor declared to ground that
+                    # item. A review found 9 of 15 rows citing anchors whose
+                    # own grounds named something else.
+                    errors.append(
+                        f"K6 MONOGRAPH_GROUNDING: {row['item']} cites {gid}, whose "
+                        f"grounds do not name {row['item']}"
                     )
         for row in const.get("governing_roles_unenforced", []):
             for gid in row.get("monograph_grounds", []):
@@ -448,6 +579,20 @@ def main() -> int:
                     errors.append(
                         f"K6 MONOGRAPH_GROUNDING: {row['role']} cites unknown anchor {gid}"
                     )
+
+    # ---- K7: pinned core ------------------------------------------------------
+    declared_laws = set(block_a["laws"])
+    for law in PINNED_LAWS:
+        if law not in declared_laws:
+            errors.append(f"K7 CORE_PINNED: pinned law removed from the constitution: {law}")
+    declared_items = set(block_b["must_remain_outside"])
+    for item in PINNED_DENY_ITEMS:
+        if item not in declared_items:
+            errors.append(f"K7 CORE_PINNED: pinned deny-list item removed: {item}")
+    for item in PINNED_ENFORCED:
+        row = enforcement.get(item)
+        if row is not None and row.get("enforcement") == "NONE":
+            errors.append(f"K7 CORE_PINNED: pinned enforced item downgraded to NONE: {item}")
 
     # Notes print first and always. They were previously printed only on the
     # passing path, so the whole gap report vanished exactly when something

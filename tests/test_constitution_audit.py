@@ -144,7 +144,7 @@ class DeclaredConstitutionTests(CopyTestCase):
 
     def test_unenforced_items_are_visible_not_hidden(self):
         _, out = run_audit()
-        for item in ("EVALUATOR_CUSTODY", "CLAIM_BINDING_AUTHORITY", "PARENT_CUSTODY"):
+        for item in ("EVALUATOR_CUSTODY", "CLAIM_BINDING_AUTHORITY"):
             with self.subTest(item=item):
                 self.assertIn(f"UNENFORCED by declaration: {item}", out)
 
@@ -152,7 +152,7 @@ class DeclaredConstitutionTests(CopyTestCase):
         # Previously only NONE rows were reported, so the two items that
         # self-declare partial coverage never appeared in any output.
         _, out = run_audit()
-        for item in ("EVIDENCE_IDENTITY", "O_STAR_EXTERNAL_VALIDATION"):
+        for item in ("EVIDENCE_IDENTITY", "O_STAR_EXTERNAL_VALIDATION", "PARENT_CUSTODY"):
             with self.subTest(item=item):
                 self.assertIn(f"PARTIALLY ENFORCED: {item}", out)
 
@@ -430,6 +430,111 @@ class MonographGroundingTests(CopyTestCase):
         mu = [a for a in anchors if a["id"] == "VEN_MU"]
         self.assertEqual(len(mu), 1)
         self.assertEqual(mu[0]["monograph"], "VENUS")
+
+
+class ReviewRegressionTests(CopyTestCase):
+    """Each test reproduces an attack from the independent review of 2026-09-26
+    that passed every check at the time."""
+
+    def test_k7_deleting_a_deny_list_item_fires(self):
+        def fn(d):
+            d["block_b_deny_list"]["must_remain_outside"].remove("TRUST_ROOT")
+            d["deny_list_enforcement"] = [
+                r for r in d["deny_list_enforcement"] if r["item"] != "TRUST_ROOT"
+            ]
+        self.assert_fires("K7", fn)
+
+    def test_k7_deleting_a_law_fires(self):
+        self.assert_fires(
+            "K7",
+            lambda d: d["block_a_permanent_noncollapse_laws"]["laws"].remove(
+                "ABSTRACTION != CAUSAL_USE"
+            ),
+        )
+
+    def test_k7_downgrading_an_enforced_item_fires(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "ROLLBACK":
+                    row.clear()
+                    row.update({"item": "ROLLBACK", "enforcement": "NONE", "reason": "any"})
+        self.assert_fires("K7", fn)
+
+    def test_k2_prefix_into_live_class_fires(self):
+        self.assert_fires(
+            "K2",
+            lambda d: d["block_c_authority_graph"]["routing"].append(
+                {"prefix": "autonomy/", "class": "LIVE_CONSTITUTION"}
+            ),
+        )
+
+    def test_k2_unpinned_live_edge_fires(self):
+        self.assert_fires(
+            "K2",
+            lambda d: d["block_c_authority_graph"]["routing"].append(
+                {"path": "Makefile", "class": "LIVE_ROUTING"}
+            ),
+        )
+
+    def test_k2_shadowing_edge_fires(self):
+        # Inserted first, a kernel/ prefix would override the constitution's
+        # own LIVE_CONSTITUTION edge under first-match classification.
+        self.assert_fires(
+            "K2",
+            lambda d: d["block_c_authority_graph"]["routing"].insert(
+                0, {"prefix": "kernel/", "class": "HISTORICAL_SNAPSHOT"}
+            ),
+        )
+
+    def test_k4_vendored_source_text_does_not_count(self):
+        probe = "_".join(["ZZVENDORED", "LAW"]) + " != " + "_".join(["ONLY", "IN", "SOURCE"])
+        self.write("provenance/canonical-extracts/_zz_source.md", probe + "\n")
+        self.assert_fires(
+            "K4", lambda d: d["block_a_permanent_noncollapse_laws"]["laws"].append(probe)
+        )
+
+    def test_k4_test_files_do_not_count(self):
+        probe = "_".join(["ZZTESTONLY", "LAW"]) + " != " + "_".join(["NOT", "CARRIED"])
+        self.write("tests/_zz_probe.py", f"# {probe}\n")
+        self.assert_fires(
+            "K4", lambda d: d["block_a_permanent_noncollapse_laws"]["laws"].append(probe)
+        )
+
+    def test_k4_checker_does_not_satisfy_its_own_laws(self):
+        # PINNED_LAWS in the auditor names every law. If the auditor counted
+        # as evidence, this declared-absent law would read as present.
+        absent = [r["law"] for r in load()["block_a_permanent_noncollapse_laws"]["known_absent"]]
+        self.assertIn(
+            "NETWORK_MEMORY_CHANGES_LATER_QUERY != USEFUL_RELATIONAL_RECONSTRUCTION", absent
+        )
+        code, out = run_audit()
+        self.assertEqual(code, 0, out)
+
+    def test_k6_citing_an_anchor_for_an_item_it_does_not_ground_fires(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "ROLLBACK":
+                    row["monograph_grounds"] = ["ARC_DROPPED_INDEX"]
+        self.assert_fires("K6", fn)
+
+    def test_k6_wrong_line_fires(self):
+        def fn(d):
+            for a in d["block_e_monograph_grounding"]["anchors"]:
+                if a["id"] == "OFE_COARSEST":
+                    a["line"] += 1
+        self.assert_fires("K6", fn)
+
+    def test_k6_ungrounded_item_needs_a_reason(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "TRUST_ROOT":
+                    row["no_monograph_ground"] = ""
+        self.assert_fires("K6", fn)
+
+    def test_ungrounded_items_are_reported(self):
+        _, out = run_audit()
+        self.assertIn("NO MONOGRAPH GROUND: TRUST_ROOT", out)
+        self.assertIn("NO MONOGRAPH GROUND: HARD_SUBSTRATE_CAPABILITY_LIMITS", out)
 
 
 class FailClosedTests(CopyTestCase):

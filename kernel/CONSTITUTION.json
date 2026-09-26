@@ -53,19 +53,18 @@
         "law": "fewer parts != fewer distinctions",
         "reason": "Stated nowhere in the tree. This is the fence the 2026-09-26 episode most needed: it collapsed eleven navigation links to two and called it clarity. Recorded here as constitution, absent as enforcement.",
         "reopening_condition": "Add it to AUTONOMY_SAFETY_DISTINCTION_MATRIX.json with a test reference, then remove this entry."
-      }
-    ],
-    "promoted_from_known_absent": [
+      },
       {
         "law": "NETWORK_MEMORY_CHANGES_LATER_QUERY != USEFUL_RELATIONAL_RECONSTRUCTION",
-        "date": "2026-09-26",
-        "where": "provenance/canonical-extracts/FRESH_INSTANCE_GROUND_2026-09-26.md, section 2 (Constitutional noncollapse)",
-        "note": "Its only occurrence in the tree is the vendored fresh-instance ground, which is IMMUTABLE_EVIDENCE. The law is now present as the project's own statement of it; it is still enforced by nothing, which K4 does not measure.",
-        "previous_entry": {
-          "law": "NETWORK_MEMORY_CHANGES_LATER_QUERY != USEFUL_RELATIONAL_RECONSTRUCTION",
-          "reason": "The tree carries NETWORK_MEMORY!=WORLD and NETWORK_MEMORY_CAUSALITY_RETAINED, which are different claims. The specific law -- that a changed later query does not demonstrate useful relational reconstruction -- is the one the WWW-memory result actually turns on, and it is absent.",
-          "reopening_condition": "Add it to the matrix bound to the semantic-trace evidence, then remove this entry."
-        }
+        "reason": "The tree carries NETWORK_MEMORY!=WORLD and NETWORK_MEMORY_CAUSALITY_RETAINED, which are different claims. The specific law -- that a changed later query does not demonstrate useful relational reconstruction -- is the one the WWW-memory result actually turns on, and it is absent.",
+        "reopening_condition": "Add it to the matrix bound to the semantic-trace evidence, then remove this entry."
+      }
+    ],
+    "known_absent_history": [
+      {
+        "law": "NETWORK_MEMORY_CHANGES_LATER_QUERY != USEFUL_RELATIONAL_RECONSTRUCTION",
+        "event": "promoted out of known_absent on 2026-09-26 because a vendored copy of FRESH_INSTANCE_GROUND contained it, then reverted the same day",
+        "why_reverted": "Vendoring the text the constitution was transcribed from makes a law 'present' without anything in the repository carrying it, and the entry's reopening condition was never met. K4 now excludes provenance/canonical-extracts/ and tests/ from its corpus. Found by independent review."
       }
     ]
   },
@@ -310,15 +309,14 @@
       "reopening_condition": "Add a matrix distinction requiring that any artifact claiming independent evaluation name its evaluator, that evaluator's custody boundary, and its authorship separation from the producer. Then bind it here.",
       "monograph_grounds": [
         "OFE_NOT_AUTHOR_OF_EVIDENCE",
-        "OFE_EVALUATOR_ONLY",
         "MIN_OWN_EVALUATOR",
         "MIN_BOUNDARY",
         "MIN_ANCESTRY",
         "VEN_NO_SELF_CERTIFICATION",
-        "VEN_ANCESTRY",
-        "ARC_JURISDICTION_ROUTING"
+        "VEN_ANCESTRY"
       ],
-      "reopening_condition_formal": "Venus eq. (source ancestry), anchor VEN_ANCESTRY: a return m_v certifies a change produced by m_p only if A(m_v) and A(m_p) are disjoint. Enforceable once result artifacts record validator identity and source ancestry. R198 and R206 record neither, which is the gap LIN-4 names; a check written today would therefore fail on both and belongs with the author's decision on LIN-4."
+      "reopening_condition_formal": "Venus eq. (source ancestry), anchor VEN_ANCESTRY: a return m_v certifies a change produced by m_p only if A(m_v) and A(m_p) are disjoint. Enforceable once result artifacts record validator identity and source ancestry. R198 and R206 record neither, which is the gap LIN-4 names; a check written today would therefore fail on both and belongs with the author's decision on LIN-4.",
+      "branch_ownership": "By the monographs' own routing (Arcane Magics l.1234, anchor ARC_JURISDICTION_ROUTING), independence of returned consequence belongs to Venus. That is ownership, not a ground for the law, so it is recorded here rather than cited."
     },
     {
       "item": "TRUST_ROOT",
@@ -329,9 +327,8 @@
         "UNTRUSTED_TARGET_TEXT_NOT_SHELL",
         "UNTRUSTED_PATH_REFERENCE_NOT_MUTATION_AUTHORITY"
       ],
-      "monograph_grounds": [
-        "ARC_DROPPED_INDEX"
-      ]
+      "monograph_grounds": [],
+      "no_monograph_ground": "No monograph mentions a trust root; 'trust' does not occur in any of the five pinned blobs. The item comes from FRESH_INSTANCE_GROUND section 2 ('independent evaluator custody / trust roots'). An earlier grounding on ARC_DROPPED_INDEX was a misreading: that passage is about provenance indices."
     },
     {
       "item": "AUTHORIZATION",
@@ -365,8 +362,7 @@
       "reason": "Zero matrix distinctions mention claim binding. EDU17R1 preserves the separator MENTION != INCIDENCE as an experimental result, but nothing enforces that a claim may not bind itself to evidence it selected.",
       "reopening_condition": "Add a distinction binding claim-to-evidence authority to an external party, with EDU17R1's MENTION != INCIDENCE separator as its test reference.",
       "monograph_grounds": [
-        "OFE_VACUOUS",
-        "ARC_SELF_SEALED_COMMUNITY"
+        "MIN_CLAIM_ATOM"
       ]
     },
     {
@@ -405,18 +401,23 @@
         "U1_RECURRENCE_ROLLBACK_AND_SAFETY_FLOOR"
       ],
       "monograph_grounds": [
-        "MIN_NEGATIVES"
+        "MIN_ROLLBACK"
       ]
     },
     {
       "item": "PARENT_CUSTODY",
-      "enforcement": "NONE",
-      "reason": "Zero matrix distinctions govern parent custody or ancestry preservation. provenance/DEVELOPMENTAL_LINEAGE.md holds ancestry by convention, and the EDU7 family went missing from it without tripping anything -- which is exactly the failure this item exists to prevent.",
+      "enforcement": "MATRIX_DISTINCTION",
       "reopening_condition": "Add a distinction requiring that every result-bearing node reachable in the DAG be reachable in the lineage, and bind it to the existing scripts/audit_dag_test_coverage.py walker.",
       "monograph_grounds": [
-        "MIN_BOUNDARY",
-        "MIN_NEGATIVES"
-      ]
+        "MIN_BOUNDARY"
+      ],
+      "enforced_by": "kernel/development/AUTONOMY_SAFETY_DISTINCTION_MATRIX.json",
+      "distinctions": [
+        "ROLLBACK_CUSTODY_REQUIRED"
+      ],
+      "note": "PARTIAL. ROLLBACK_CUSTODY_REQUIRED's invariant reads 'rollback/parent custody remains external/non-internalizable', so non-internalization of parent custody is governed. Ancestry preservation is not: the EDU7 family went missing from DEVELOPMENTAL_LINEAGE.md without tripping anything.",
+      "correction_2026_09_26": "This row previously declared enforcement NONE with the reason 'Zero matrix distinctions govern parent custody'. That was false from f79b332 on and was carried through a later regrounding unexamined. Found by independent review.",
+      "previous_reason": "Zero matrix distinctions govern parent custody or ancestry preservation. provenance/DEVELOPMENTAL_LINEAGE.md holds ancestry by convention, and the EDU7 family went missing from it without tripping anything -- which is exactly the failure this item exists to prevent."
     },
     {
       "item": "ANTI_MINERVA_CORRECTION_PERMEABILITY",
@@ -452,9 +453,8 @@
         "RUNTIME_SUBSTRATE_NOT_SEMANTIC_INTERNALIZATION",
         "AUTONOMOUS_RESOURCE_BUDGET"
       ],
-      "monograph_grounds": [
-        "ARC_CARRIER"
-      ]
+      "monograph_grounds": [],
+      "no_monograph_ground": "No monograph states hard substrate or resource limits of the learner. The item comes from FRESH_INSTANCE_GROUND section 2 ('hard resource/substrate boundaries'). An earlier grounding on ARC_CARRIER misread it: that passage's living carrier is the human researcher."
     }
   ],
   "descriptive_roles": {
@@ -597,7 +597,7 @@
         "monograph": "OFE",
         "line": 408,
         "quote": "the model may change what it asks, but it may not manufacture agreement by deleting a still-available discriminator.",
-        "grounds": "scripts/audit_self_sealing.py (eq:no-self-seal)"
+        "grounds": "scripts/audit_self_sealing.py (eq:no-self-seal); ANTI_MINERVA_CORRECTION_PERMEABILITY"
       },
       {
         "id": "OFE_VACUOUS",
@@ -618,7 +618,7 @@
         "monograph": "OFE",
         "line": 707,
         "quote": "a learner may generate a test or method, yet it does not author the returned evidence that the method works.",
-        "grounds": "EVALUATOR_CUSTODY; FRESH_WORLD_RETURN"
+        "grounds": "EVALUATOR_CUSTODY; FRESH_WORLD_RETURN; WORLD_OTHER"
       },
       {
         "id": "ECL_REGISTERS",
@@ -693,9 +693,9 @@
       {
         "id": "ARC_CARRIER",
         "monograph": "ARCANE",
-        "line": 877,
+        "line": 878,
         "quote": "No theory, publication, institution, or long-run telos may justify consuming the living carrier required for future correction.",
-        "grounds": "HARD_SUBSTRATE_CAPABILITY_LIMITS"
+        "grounds": "the living carrier required for future correction is the human researcher (the passage names destroyed sleep and permanent emergency throughput); it grounds no deny-list item"
       },
       {
         "id": "ARC_SERVITOR",
@@ -729,7 +729,7 @@
         "id": "MIN_NEGATIVES",
         "monograph": "MINERVA",
         "line": 99,
-        "quote": "The current raising lineage is important because it does not erase negative",
+        "quote": "The current raising lineage is important because it does not erase negative branches.",
         "grounds": "PARENT_CUSTODY"
       },
       {
@@ -786,14 +786,14 @@
         "monograph": "VENUS",
         "line": 411,
         "quote": "but it cannot by that fact alone instantiate the nonpreauthored return required to certify the success of the same developmental change.",
-        "grounds": "EVALUATOR_CUSTODY; the R198 / R206 validator gap"
+        "grounds": "EVALUATOR_CUSTODY; the R198 / R206 validator gap; O_STAR_EXTERNAL_VALIDATION"
       },
       {
         "id": "VEN_RSI_RETENTION",
         "monograph": "VENUS",
         "line": 442,
         "quote": "where retention occurs only after the independently sourced return.",
-        "grounds": "bounded RSI"
+        "grounds": "bounded RSI; FRESH_WORLD_RETURN"
       },
       {
         "id": "VEN_SENSES",
@@ -807,12 +807,12 @@
         "monograph": "VENUS",
         "line": 593,
         "quote": "\\UnknownState\\neq\\mathsf{INCOMPATIBLE}\\neq\\GaugeState\\neq\\ResidualState",
-        "grounds": "UNKNOWN != INCOMPATIBLE != GAUGE != RESIDUAL (WITHHOLD/PROBE, REFUSE, CONSUME, RETAIN)"
+        "grounds": "UNKNOWN != INCOMPATIBLE != GAUGE != RESIDUAL (WITHHOLD/PROBE, REFUSE, CONSUME, RETAIN); WITHHOLD_SAFETY_LAW"
       },
       {
         "id": "VEN_MATURE_REDUCTION",
         "monograph": "VENUS",
-        "line": 699,
+        "line": 698,
         "quote": "or other mature machinery should replace bespoke project machinery",
         "grounds": "MATURE_REDUCE; no host-written cognitive machinery"
       },
@@ -822,6 +822,20 @@
         "line": 841,
         "quote": "A(m_1)\\cap A(m_2)\\neq\\varnothing",
         "grounds": "EVALUATOR_CUSTODY reopening predicate: source ancestries must be disjoint"
+      },
+      {
+        "id": "MIN_CLAIM_ATOM",
+        "monograph": "MINERVA",
+        "line": 169,
+        "quote": "each empirical claim atom must bind to evidence that was actually selected under the preregistered product contract",
+        "grounds": "CLAIM_BINDING_AUTHORITY"
+      },
+      {
+        "id": "MIN_ROLLBACK",
+        "monograph": "MINERVA",
+        "line": 312,
+        "quote": "This restates the existing nonpreauthored-return, provenance, O*, rollback, and reopening obligations.",
+        "grounds": "ROLLBACK"
       }
     ]
   }

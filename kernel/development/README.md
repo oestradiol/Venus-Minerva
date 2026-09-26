@@ -135,9 +135,11 @@ directly rewrite admitted learner policy.
 ## Non-live host prototype
 
 A hand-written dependency planner for #236 was added on 2026-09-26 between
-12:50 and 12:54 (UTC-03:00) by an external assistant working through the
-author's account, then withdrawn by that same assistant. It is kept only as
-audit evidence:
+12:50:56 and 12:56:18 (UTC-03:00), committed as `Elaina` like everything else
+in this repository, and withdrawn at 13:35. That an external assistant wrote
+and withdrew it, rather than one of Minerva's workers, rests on the author's
+account and the assistant's own transcript as recorded in `b566480`; the
+commits themselves cannot show it. It is kept only as audit evidence:
 
 - `dependency_planning_curriculum.py`
 - `DEPENDENCY_PLANNING_DIDACTIC_CASES.json`

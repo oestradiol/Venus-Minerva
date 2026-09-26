@@ -69,9 +69,11 @@ exact string a gate checks:
   `kernel/CURRENT_STATE.md`, including `NETWORK / WWW != World / Other`, which
   `make boundary` greps for. CI has failed since. It also removed
   `shared carrier != shared authority`, whose last copy on the branch that was,
-  and the *Authority* section, which was the only route from Venus's live state
+  the *Authority* section, which was the only route from Venus's live state
   to its own kernel law, `WORLDMIND.md`, `TRUST_BOUNDARY.md`, provenance and
-  monograph.
+  monograph, and the *Live object* and *Reopening condition* sections. All
+  four sections were removed; the first restoration commit put back only two,
+  and an independent review caught the other two.
 - **main.** `88814b3` removed the *Branch lifecycle* section of
   `docs/NOW_MAP.md`: the rule that only the six routed branches are live
   authority, the block containing
@@ -84,7 +86,7 @@ alongside the reconciled text, which is kept:
 
 | branch | fix commit | gate after |
 |---|---|---|
-| `claude/venus-restore-boundary-gate` (off `split/venus`) | `30813d2` | `make boundary` exit 0 |
+| `claude/venus-restore-boundary-gate` (off `split/venus`) | `30813d2`, `f1a7fc5` | `make boundary` exit 0 |
 | `claude/root-restore-branch-policy` (off `main`) | `444f487` | `make audit` exit 0 |
 
 They are not on `split/venus` or `main`. Pushing to another branch's line
@@ -110,7 +112,8 @@ than their names.
 
 **What the red hid.** `scripts/run_minerva_tests.py` stops at the first failing
 file. At `f79b332` it ran 29 of 106 selected test files. After the repair all
-106 run, 638 tests, all passing.
+106 run: 638 tests at `312ca99`, 665 by the end of this session as tests
+were added, all passing.
 
 **Why it is time-sensitive.** `main`'s scheduled Minerva worker checks out
 `split/minerva` and runs `make audit` daily at 07:43 UTC. Its last run (12:28
@@ -173,8 +176,10 @@ On `claude/inspiring-mayer-g9j11o` (off `split/minerva`):
 | `dfe8930` | constitution grounded in the five monographs, 37 quotes pinned to blobs, K6 |
 | this commit | fresh-instance ground vendored byte-exact and pinned; this record |
 
-Two of these modify a checker together with the file it checks. Both are
-declared as self-sealing residuals keyed to `eefdde25`, not exempted.
+Four of them (`eefdde2`, `576145e`, `dfe8930`, `e83b650`) modify a checker
+together with the file it checks. They were declared as two self-sealing
+residuals keyed to `eefdde25`, and that is where this session's worst defect
+was. See section 8.
 
 **Merge note.** Those residual keys are commit SHAs. Squash-merging this
 branch would rewrite them, the declared residuals would stop reproducing, and
@@ -197,3 +202,65 @@ the self-sealing auditor would fail closed. Fast-forward or merge-commit only.
   (sections A–E); an earlier correction saying it did not exist was itself
   wrong. It is not in this repository, so nothing here needed changing.
 - `mu_F` is the author's notation (Venus `eq:mu`), not an assistant import.
+
+## 8. Independent review of this session's own work
+
+An adversarial reviewer with no authorship of these commits re-ran everything.
+All findings were verified before being acted on. The ones that mattered:
+
+**Critical: one residual declaration absorbed every later edit.** An R1
+residual is keyed by the first commit of an episode, and the episode kept
+growing while the same author kept committing. The declaration written for
+`576145e` therefore also covered `dfe8930` and `e83b650`, which each modified
+the constitution auditor and the constitution together, and neither got a
+finding of its own. The reviewer demonstrated the hole: a same-author commit
+deleting `EVALUATOR_CUSTODY` from the constitution and editing the auditor
+passed. It is the failure the self-sealing auditor exists to catch, rebuilt by
+the session repairing it, in the same shape as the `is_restoration` bypass
+before it. Every R1 declaration now names `through`, the last
+checker-modifying commit it covers; a later one is a fresh finding.
+
+**Serious, all fixed:**
+- The constitution could shrink silently. Deleting a law or a deny-list item,
+  or downgrading an enforced item to NONE, passed every check. The protected
+  core is now pinned in the auditor, so shrinking it requires editing the
+  checker, which R1 surfaces. The first version of that fix put the pinned laws
+  into K4's corpus and made every law "present"; caught before commit.
+- K2 let any prefix route into a LIVE class and let an earlier edge shadow a
+  later one. Live edges are now pinned per file; prefixes may not route into
+  LIVE classes; shadowing and duplicate edges fail.
+- Vendoring FRESH_INSTANCE_GROUND made K4 unable to fail for 16 of 17 laws,
+  and the promotion of a declared-absent law out of `known_absent` was cheap:
+  its reopening condition was never met. The promotion is reverted, and K4 no
+  longer counts `provenance/canonical-extracts/`, `tests/`, or the auditor.
+- K6 checked that quotes were verbatim, not that they fit. TRUST_ROOT,
+  ROLLBACK, HARD_SUBSTRATE_CAPABILITY_LIMITS and CLAIM_BINDING_AUTHORITY cited
+  anchors that do not say what they were cited for. ROLLBACK and
+  CLAIM_BINDING_AUTHORITY now cite Minerva passages that do. TRUST_ROOT and
+  HARD_SUBSTRATE_CAPABILITY_LIMITS have no monograph ground ("trust" occurs in
+  none of the five monographs) and say so; K6 accepts that only with a
+  stated reason and reports it every run. A row may now cite only an anchor
+  whose declared grounds name that row, and each anchor's line is checked.
+- PARENT_CUSTODY was declared unenforced because "zero matrix distinctions
+  govern parent custody". `ROLLBACK_CUSTODY_REQUIRED` reads "rollback/parent
+  custody remains external/non-internalizable". The reason was false from
+  `f79b332` on and this session carried it through a regrounding unexamined.
+  It is now partially enforced, with ancestry preservation still open.
+
+**Minor, fixed:** the offset check accepted `yesterday Z` and `+99:99`; it
+now requires a parseable ISO timestamp. The README's planner window ended at
+12:54, but its own list includes a file added at 12:56:18. It also stated
+the external-assistant attribution as fact; it now names its source.
+
+**Overclaim in a commit message that cannot be rewritten:** `dfe8930` says the
+constitution's "laws come from the five monographs". None of the 17 laws
+appears verbatim in any monograph. They appear verbatim in
+FRESH_INSTANCE_GROUND. The monographs ground what the laws protect, not their
+wording, which is what the constitution's own `authority_edge_note` already
+says.
+
+**Not fixed, recorded:** K3 still counts a role mentioned in a code comment as
+referenced by code; K5 still accepts a runtime path appearing anywhere in the
+phase plan. A commit by another author, or a forged `--author`, still resets
+an episode and evades R1. That was present before this session.
+

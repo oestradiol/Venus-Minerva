@@ -377,6 +377,67 @@ class DetectionTests(unittest.TestCase):
         self.assertEqual(code, 2, out)
         self.assertIn("shallow", out)
 
+    def test_offset_check_rejects_clock_and_zone_dependent_values(self):
+        # Each of these was accepted by the first, suffix-only check.
+        for value in ("yesterday Z", "Sep 26 2026 -1200", "2026-09-26 +0000",
+                      "2026-09-26T00:00+99:99", "2026-0926Z", "2026-09-26 00:00",
+                      "2026-09-26"):
+            with self.subTest(value=value):
+                self.assertFalse(audit.has_explicit_offset(value))
+        for value in ("2026-09-26T00:00:00+00:00", "2026-09-26T00:00:00Z",
+                      "2026-09-25T21:00-03:00"):
+            with self.subTest(value=value):
+                self.assertTrue(audit.has_explicit_offset(value))
+
+    def test_declared_r1_residual_needs_a_bound(self):
+        tmp, run = self.build()
+        (tmp / "scripts/check.py").write_text("# checker v2\n", encoding="utf-8")
+        (tmp / "GUARDED.md").write_text("a != b\nchanged\n", encoding="utf-8")
+        run("commit", "-qam", "edit both", when="2021-06-01T01:00:00+0000")
+        first = __import__("subprocess").run(
+            ["git", "rev-parse", "HEAD"], cwd=tmp, capture_output=True, text=True
+        ).stdout[:8]
+        scope = tmp / "kernel/development/SELF_SEALING_AUDIT_SCOPE.json"
+        data = json.loads(scope.read_text(encoding="utf-8"))
+        data["declared_residuals"] = [{
+            "key": f"R1_SELF_SEALING|scripts/check.py|{first}",
+            "reopening_condition": "x",
+        }]
+        scope.write_text(json.dumps(data), encoding="utf-8")
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 1, out)  # declared, but through no commit
+        data["declared_residuals"][0]["through"] = first
+        scope.write_text(json.dumps(data), encoding="utf-8")
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 0, out)
+
+    def test_declared_r1_residual_does_not_absorb_a_later_checker_edit(self):
+        # Regression for the independent review of 2026-09-26: one declaration
+        # covered every later edit to the same checker in the same episode.
+        tmp, run = self.build()
+        (tmp / "scripts/check.py").write_text("# checker v2\n", encoding="utf-8")
+        (tmp / "GUARDED.md").write_text("a != b\nchanged\n", encoding="utf-8")
+        run("commit", "-qam", "edit both", when="2021-06-01T01:00:00+0000")
+        first = __import__("subprocess").run(
+            ["git", "rev-parse", "HEAD"], cwd=tmp, capture_output=True, text=True
+        ).stdout[:8]
+        scope = tmp / "kernel/development/SELF_SEALING_AUDIT_SCOPE.json"
+        data = json.loads(scope.read_text(encoding="utf-8"))
+        data["declared_residuals"] = [{
+            "key": f"R1_SELF_SEALING|scripts/check.py|{first}",
+            "through": first,
+            "reopening_condition": "x",
+        }]
+        scope.write_text(json.dumps(data), encoding="utf-8")
+        run("add", "-A")
+        run("commit", "-qm", "declare", when="2021-06-01T01:05:00+0000")
+        self.assertEqual(self.audit_in(tmp)[0], 0)
+        (tmp / "scripts/check.py").write_text("# checker v3\n", encoding="utf-8")
+        run("commit", "-qam", "edit checker again", when="2021-06-01T01:10:00+0000")
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 1, out)
+        self.assertIn("modified again after that declaration", out)
+
     def test_no_restoration_bypass_remains_in_source(self):
         self.assertNotIn("def is_restoration", SCRIPT.read_text(encoding="utf-8"))
 

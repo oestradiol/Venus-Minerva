@@ -41,6 +41,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -157,20 +158,35 @@ def removed_fence_tokens(sha: str, path: str, tokens: list[str]) -> list[str]:
     return hits
 
 
-OFFSET = re.compile(r"(Z|[+-]\d{2}:?\d{2})$")
+ISO_WITH_OFFSET = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$"
+)
 
 
 def has_explicit_offset(since: str) -> bool:
-    """True only when the window start pins its own timezone.
+    """True only for a full ISO-8601 timestamp with a valid UTC offset.
 
     `git log --since="2026-09-26 00:00"` is read in the local timezone of the
     machine running it. The 2026-09-26 repair was verified on a machine at
-    UTC-03:00 and gated in CI at UTC; the three-hour difference admitted three
-    extra commits into the window in CI only, so every local "make audit exit
-    0" on the repair was true on the author's laptop and false on the gate.
-    A verdict that depends on where it runs is a check weaker than its name.
+    UTC-03:00 and gated in CI at UTC; the three-hour difference put about 109
+    more commits and three more findings into the window in CI only, so every
+    local "make audit exit 0" on the repair was true on the author's laptop
+    and false on the gate. A verdict that depends on where it runs is a check
+    weaker than its name.
+
+    The first version of this check only looked for an offset-like suffix, and
+    an independent review showed it accepted "yesterday Z", "Sep 26 2026 -1200"
+    and "+99:99", all still clock- or timezone-dependent. The value must now
+    parse as an ISO timestamp whose offset is real.
     """
-    return bool(OFFSET.search(since.strip()))
+    value = since.strip()
+    if not ISO_WITH_OFFSET.match(value):
+        return False
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None
 
 
 def is_prefrozen(path: str, markers: list[str]) -> bool:
@@ -263,6 +279,7 @@ def main() -> int:
     }
     episodes = group_episodes(commits, gap)
     findings: list[tuple[str, str]] = []
+    r1_through: dict[str, str] = {}
 
     for episode in episodes:
         touched: dict[str, str] = {}
@@ -283,11 +300,15 @@ def main() -> int:
                 continue
             if all(waived(c, "R1_SELF_SEALING", exceptions) for c in episode):
                 continue
+            key = f"R1_SELF_SEALING|{checker}|{episode[0].sha[:8]}"
+            through = [c.sha[:8] for c in episode if checker in c.changes][-1]
             findings.append((
-                f"R1_SELF_SEALING|{checker}|{episode[0].sha[:8]}",
+                key,
                 f"R1_SELF_SEALING [{span}] {author}: checker {checker} was modified "
-                f"in the same episode as the artifacts it guards: {', '.join(overlap)}",
+                f"in the same episode as the artifacts it guards: {', '.join(overlap)} "
+                f"(last checker change {through})",
             ))
+            r1_through[key] = through
 
         # R2 — fence token deleted from a governance surface
         for commit in episode:
@@ -335,8 +356,19 @@ def main() -> int:
                       f"records no closing return")
                 return 1
 
-    fresh = [(key, msg) for key, msg in findings if key not in declared]
-    carried = [(key, msg) for key, msg in findings if key in declared]
+    # An R1 residual is keyed by the episode's first commit, and an episode
+    # keeps growing while its author keeps committing. Without a bound, one
+    # declaration silently covered every later edit to the same checker in the
+    # same episode: on 2026-09-26 a residual declared for 576145e went on to
+    # absorb dfe8930 and e83b650, and a commit deleting a deny-list item and
+    # editing the auditor passed. Each R1 declaration therefore names the last
+    # checker-modifying commit it covers; a later one is a fresh finding.
+    grown = {
+        key for key, through in r1_through.items()
+        if key in declared and declared[key].get("through") != through
+    }
+    fresh = [(key, msg) for key, msg in findings if key not in declared or key in grown]
+    carried = [(key, msg) for key, msg in findings if key in declared and key not in grown]
     stale = sorted(set(declared) - {key for key, _ in findings})
 
     if carried:
@@ -362,8 +394,13 @@ def main() -> int:
 
     if fresh:
         print(f"SELF-SEALING AUDIT FINDINGS ({len(fresh)})")
-        for _, msg in fresh:
+        for key, msg in fresh:
             print(f"  {msg}")
+            if key in grown:
+                print(
+                    f"      declared through {declared[key].get('through', 'NOTHING')}; "
+                    f"the checker was modified again after that declaration"
+                )
         print()
         print("A finding is not proof the change is wrong. It is proof the change")
         print("altered a rule of judgement without an independent return. Either")
