@@ -353,6 +353,30 @@ class DetectionTests(unittest.TestCase):
                 os.environ["TZ"] = old
         self.assertEqual(set(verdicts.values()), {1}, verdicts)
 
+    def test_empty_window_withholds_rather_than_passing(self):
+        # Regression for D6: PASS over 0 commits. Recorded as fixed during the
+        # 2026-09-26 session; it was not, until this test and its guard.
+        tmp, _ = self.build({"audit_since": "2099-01-01T00:00:00+00:00"})
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 2, out)
+        self.assertIn("nothing was audited", out)
+
+    def test_shallow_clone_withholds(self):
+        import subprocess
+
+        tmp, run = self.build()
+        (tmp / "GUARDED.md").write_text("a != b\nmore\n", encoding="utf-8")
+        run("commit", "-qam", "second")
+        shallow = tmp.parent / (tmp.name + "-shallow")
+        subprocess.run(
+            ["git", "clone", "-q", "--depth", "1", f"file://{tmp}", str(shallow)],
+            check=True, capture_output=True,
+        )
+        self.addCleanup(lambda: __import__("shutil").rmtree(shallow, ignore_errors=True))
+        code, out = self.audit_in(shallow)
+        self.assertEqual(code, 2, out)
+        self.assertIn("shallow", out)
+
     def test_no_restoration_bypass_remains_in_source(self):
         self.assertNotIn("def is_restoration", SCRIPT.read_text(encoding="utf-8"))
 

@@ -236,9 +236,26 @@ def main() -> int:
         guard_map.setdefault(row["checker"], set()).update(row.get("guards", []))
 
     try:
+        shallow = git("rev-parse", "--is-shallow-repository").strip() == "true"
         commits = load_commits(since)
     except RuntimeError as exc:
         print(f"WITHHOLD: cannot resolve audit window: {exc}")
+        return 2
+    # An audit over no history is not a pass. The first version of this
+    # auditor reported PASS over 0 commits when a bare date parsed to nothing;
+    # that was recorded as fixed and regression-tested, and neither was true
+    # until this guard. A shallow clone is the same failure by another route:
+    # truncated history cannot support a verdict about history.
+    if shallow and not git("log", "-1", "--format=%H", f"--before={since}").strip():
+        # Shallow is fine when the cut lies before the window. It is not when
+        # no commit older than the window start survives: then the window
+        # itself may be truncated and the episode grouping at its start is
+        # unknowable.
+        print("WITHHOLD: shallow clone with no commit before the audit window; "
+              "the window may be truncated")
+        return 2
+    if not commits:
+        print(f"WITHHOLD: no commits in the audit window since {since}; nothing was audited")
         return 2
 
     declared = {
