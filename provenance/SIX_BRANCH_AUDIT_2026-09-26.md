@@ -264,3 +264,39 @@ referenced by code; K5 still accepts a runtime path appearing anywhere in the
 phase plan. A commit by another author, or a forged `--author`, still resets
 an episode and evades R1. That was present before this session.
 
+### Second pass
+
+The reviewer re-ran the fixes above and found that section 8's central claim,
+"shrinking it requires editing the checker, which R1 surfaces", was false as
+first implemented. Three holes, all fixed in the commit after this text:
+
+- **Delete, then re-add.** R1 kept only the first status a checker had in an
+  episode and required it to be a modification. Deleting the constitution
+  auditor in one commit and re-adding an edited copy in the next was invisible,
+  and a deny-list item was removed that way with every gate green. R1 now
+  counts any touch of an existing checker. Only a genuine first introduction is
+  bootstrap. Applying that rule to history surfaced four findings it had hidden,
+  now declared. Three are checkers relaxed a minute or two after being
+  introduced, alongside their scope. One is this assistant's predecessor
+  session modifying the self-sealing auditor inside the episode that introduced
+  it. R3 now fires on a deleted or renamed prefreeze, unless its exact bytes
+  still exist in that commit's tree, as with the one retirement to
+  `provenance/historical/` in the window.
+- **Self-set bounds.** The author of a checker change could advance its
+  residual's bound with a scope-only commit. `f53c13d` did exactly that for this
+  session's own two residuals. A bound must now have been last set by someone
+  other than the author of the change it covers. Both of this session's own
+  residuals therefore fail until the branch author confirms them. That is the
+  reopening condition they already stated, now enforced.
+- **Data-only weakening.** A new authority class under another name, an
+  enforced item re-pointed at an irrelevant distinction, an equivalent form of
+  `"CAUSAL"`, or a vendored file edited together with its pin, all passed. K7 now
+  pins a digest of every protected section in the auditor, so each of those
+  requires a checker edit.
+
+The reviewer also confirmed one point where the first pass was wrong
+(`VEN_NO_SELF_CERTIFICATION` does begin on line 411) and judged the item-name
+consistency check in K6 tautological. It is: it keeps two fields that the same
+author writes consistent with each other. It does not judge fit, and the code
+now says so.
+

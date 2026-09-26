@@ -23,7 +23,8 @@ nothing. That is why nothing could refuse the contaminating compression.
                          all five monographs are cited; every deny-list item
                          has a ground, and each anchor it cites names that item
   K7 CORE_PINNED         the laws, deny-list items and enforced items pinned in
-                         THIS FILE are still declared, and still enforced
+                         THIS FILE are still declared and enforced, and the
+                         protected sections match the digest pinned here
 
 Comparison is whitespace-normalized throughout. An earlier spaced-form check of
 these same laws reported 13 of 15 absent when they were present without spaces
@@ -98,6 +99,9 @@ PINNED_ENFORCED = (
     "PARENT_CUSTODY", "ANTI_MINERVA_CORRECTION_PERMEABILITY",
     "O_STAR_EXTERNAL_VALIDATION", "HARD_SUBSTRATE_CAPABILITY_LIMITS",
 )
+# Digest of the protected sections; see protected_core().
+PINNED_CORE_DIGEST = "5f6ea730619d019e617d4e383c63e2a5ef68b34c3ecf2402139dd42ff8f3c56c"
+
 # Live authority is the most sensitive routing there is, so its edges are
 # pinned exactly. A new live surface needs an edit here; a prefix may never
 # route into a LIVE class.
@@ -213,6 +217,38 @@ def json_strings(obj) -> set[str]:
         for value in obj:
             out |= json_strings(value)
     return out
+
+
+def protected_core(const: dict) -> str:
+    """Canonical digest of every section whose silent change weakens a check.
+
+    Pinning individual values left data-only edits open: adding an authority
+    class under a non-LIVE name, re-pointing an enforced item at an irrelevant
+    distinction, declaring "CAUSAL" an equivalent form of a law, or editing a
+    vendored file and its sha256 pin together all passed. The digest covers the
+    laws and their equivalent forms, the deny-list, each enforcement row's
+    (item, enforcement, enforced_by, distinctions), and the full routing graph
+    with its pins. Changing any of it means updating PINNED_CORE_DIGEST in this
+    file, which the self-sealing auditor surfaces as R1.
+    """
+    a = const["block_a_permanent_noncollapse_laws"]
+    c = const["block_c_authority_graph"]
+    core = {
+        "laws": a.get("laws", []),
+        "equivalent_forms": a.get("equivalent_forms", {}),
+        "must_remain_outside": const["block_b_deny_list"].get("must_remain_outside", []),
+        "enforcement": [
+            [r.get("item"), r.get("enforcement"), r.get("enforced_by"), r.get("distinctions")]
+            for r in const.get("deny_list_enforcement", [])
+        ],
+        "classes": c.get("classes", []),
+        "routing": [
+            [r.get("path"), r.get("prefix"), r.get("class"), r.get("sha256")]
+            for r in c.get("routing", [])
+        ],
+    }
+    blob = json.dumps(core, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
 def matrix_ids(path: Path) -> set[str] | None:
@@ -565,10 +601,15 @@ def main() -> int:
                     errors.append(
                         f"K6 MONOGRAPH_GROUNDING: {row['item']} cites unknown anchor {gid}"
                     )
-                elif row["item"] not in str(by_id[gid].get("grounds", "")):
+                elif not re.search(
+                    rf"(?<![A-Z_]){re.escape(row['item'])}(?![A-Z_])",
+                    str(by_id[gid].get("grounds", "")),
+                ):
                     # A row may only cite an anchor declared to ground that
                     # item. A review found 9 of 15 rows citing anchors whose
-                    # own grounds named something else.
+                    # own grounds named something else. This is a consistency
+                    # check between two fields the same author writes; it
+                    # catches drift, not a misreading. Fit is judged by review.
                     errors.append(
                         f"K6 MONOGRAPH_GROUNDING: {row['item']} cites {gid}, whose "
                         f"grounds do not name {row['item']}"
@@ -593,6 +634,13 @@ def main() -> int:
         row = enforcement.get(item)
         if row is not None and row.get("enforcement") == "NONE":
             errors.append(f"K7 CORE_PINNED: pinned enforced item downgraded to NONE: {item}")
+    digest = protected_core(const)
+    if digest != PINNED_CORE_DIGEST:
+        errors.append(
+            f"K7 CORE_PINNED: a protected section changed (digest {digest[:12]}, pinned "
+            f"{PINNED_CORE_DIGEST[:12]}). If intended, update PINNED_CORE_DIGEST in this "
+            f"file; the self-sealing auditor will surface that edit"
+        )
 
     # Notes print first and always. They were previously printed only on the
     # passing path, so the whole gap report vanished exactly when something

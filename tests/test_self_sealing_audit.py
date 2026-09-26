@@ -408,6 +408,9 @@ class DetectionTests(unittest.TestCase):
         self.assertEqual(code, 1, out)  # declared, but through no commit
         data["declared_residuals"][0]["through"] = first
         scope.write_text(json.dumps(data), encoding="utf-8")
+        run("add", "-A")
+        run("-c", "user.name=Reviewer", "commit", "-qm", "bound by another party",
+            when="2021-06-01T01:05:00+0000")
         code, out = self.audit_in(tmp)
         self.assertEqual(code, 0, out)
 
@@ -430,13 +433,91 @@ class DetectionTests(unittest.TestCase):
         }]
         scope.write_text(json.dumps(data), encoding="utf-8")
         run("add", "-A")
-        run("commit", "-qm", "declare", when="2021-06-01T01:05:00+0000")
+        run("-c", "user.name=Reviewer", "commit", "-qm", "declare",
+            when="2021-06-01T01:05:00+0000")
         self.assertEqual(self.audit_in(tmp)[0], 0)
         (tmp / "scripts/check.py").write_text("# checker v3\n", encoding="utf-8")
-        run("commit", "-qam", "edit checker again", when="2021-06-01T01:10:00+0000")
+        (tmp / "GUARDED.md").write_text("a != b\nchanged again\n", encoding="utf-8")
+        run("commit", "-qam", "edit both again", when="2021-06-01T01:10:00+0000")
+        code, out = self.audit_in(tmp)
+        # The reviewer's commit splits the author's episodes, so the second
+        # co-modification is a new episode with a finding of its own rather
+        # than growth of the declared one. Either way it is not absorbed.
+        self.assertEqual(code, 1, out)
+        self.assertIn("SELF-SEALING AUDIT FINDINGS", out)
+
+    def test_delete_then_readd_of_a_checker_fires_r1(self):
+        # Second-pass review: the first status in an episode was kept, so a
+        # checker deleted in one commit and re-added edited in the next was
+        # invisible to R1.
+        tmp, run = self.build()
+        run("rm", "-q", "scripts/check.py")
+        run("commit", "-qm", "drop checker", when="2021-06-01T01:00:00+0000")
+        (tmp / "scripts").mkdir(exist_ok=True)
+        (tmp / "scripts/check.py").write_text("# checker, weakened\n", encoding="utf-8")
+        (tmp / "GUARDED.md").write_text("a != b\nchanged\n", encoding="utf-8")
+        run("add", "-A")
+        run("commit", "-qm", "re-add", when="2021-06-01T01:01:00+0000")
         code, out = self.audit_in(tmp)
         self.assertEqual(code, 1, out)
-        self.assertIn("modified again after that declaration", out)
+        self.assertIn("R1_SELF_SEALING", out)
+
+    def test_first_introduction_is_still_bootstrap(self):
+        tmp, run = self.build()
+        (tmp / "scripts/new_check.py").write_text("# v1\n", encoding="utf-8")
+        scope = tmp / "kernel/development/SELF_SEALING_AUDIT_SCOPE.json"
+        data = json.loads(scope.read_text(encoding="utf-8"))
+        data["guarded"].append({"checker": "scripts/new_check.py", "guards": ["GUARDED.md"]})
+        scope.write_text(json.dumps(data), encoding="utf-8")
+        (tmp / "GUARDED.md").write_text("a != b\nchanged\n", encoding="utf-8")
+        run("add", "-A")
+        run("commit", "-qm", "introduce", when="2021-06-01T01:00:00+0000")
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 0, out)
+
+    def test_deleting_a_prefreeze_fires_unless_its_bytes_survive(self):
+        tmp, run = self.build()
+        run("rm", "-q", "kernel/development/X_PREFREEZE.json")
+        run("commit", "-qm", "drop prefreeze", when="2021-06-01T01:00:00+0000")
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 1, out)
+        self.assertIn("R3_PREFREEZE_MUTATION", out)
+
+        tmp2, run2 = self.build()
+        (tmp2 / "history").mkdir()
+        run2("mv", "kernel/development/X_PREFREEZE.json", "history/X_SUPERSEDED.json")
+        run2("commit", "-qm", "retire byte-exact", when="2021-06-01T01:00:00+0000")
+        code, out = self.audit_in(tmp2)
+        self.assertEqual(code, 0, out)
+
+    def test_a_bound_set_by_the_covered_author_fires(self):
+        # Second-pass review: `through` could be advanced by the same author in
+        # a scope-only commit, and nothing flagged it.
+        tmp, run = self.build()
+        (tmp / "scripts/check.py").write_text("# checker v2\n", encoding="utf-8")
+        (tmp / "GUARDED.md").write_text("a != b\nchanged\n", encoding="utf-8")
+        run("commit", "-qam", "edit both", when="2021-06-01T01:00:00+0000")
+        sha = __import__("subprocess").run(
+            ["git", "rev-parse", "HEAD"], cwd=tmp, capture_output=True, text=True
+        ).stdout[:8]
+        scope = tmp / "kernel/development/SELF_SEALING_AUDIT_SCOPE.json"
+        data = json.loads(scope.read_text(encoding="utf-8"))
+        data["declared_residuals"] = [{
+            "key": f"R1_SELF_SEALING|scripts/check.py|{sha}", "through": sha,
+            "reopening_condition": "x",
+        }]
+        scope.write_text(json.dumps(data), encoding="utf-8")
+        run("commit", "-qam", "self-declare", when="2021-06-01T01:05:00+0000")
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 1, out)
+        self.assertIn("a bound needs a party other than the covered author", out)
+
+        data["declared_residuals"][0]["reviewed"] = "by someone else"
+        scope.write_text(json.dumps(data), encoding="utf-8")
+        run("-c", "user.name=Reviewer", "commit", "-qam", "bound by another party",
+            when="2021-06-01T01:10:00+0000")
+        code, out = self.audit_in(tmp)
+        self.assertEqual(code, 0, out)
 
     def test_no_restoration_bypass_remains_in_source(self):
         self.assertNotIn("def is_restoration", SCRIPT.read_text(encoding="utf-8"))

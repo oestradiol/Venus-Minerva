@@ -537,6 +537,48 @@ class ReviewRegressionTests(CopyTestCase):
         self.assertIn("NO MONOGRAPH GROUND: HARD_SUBSTRATE_CAPABILITY_LIMITS", out)
 
 
+class SecondReviewRegressionTests(CopyTestCase):
+    """Data-only edits that passed after the first round of fixes."""
+
+    def test_new_authority_class_under_another_name_fires(self):
+        def fn(d):
+            g = d["block_c_authority_graph"]
+            g["classes"].append("CURRENT_AUTHORITY")
+            g["routing"].append({"prefix": "autonomy/", "class": "CURRENT_AUTHORITY"})
+        self.assert_fires("K7", fn)
+
+    def test_repointing_an_enforced_item_fires(self):
+        def fn(d):
+            for row in d["deny_list_enforcement"]:
+                if row["item"] == "TRUST_ROOT":
+                    row["distinctions"] = ["WORLD_NOT_MODEL_WORLD"]
+        self.assert_fires("K7", fn)
+
+    def test_a_trivial_equivalent_form_fires(self):
+        self.assert_fires(
+            "K7",
+            lambda d: d["block_a_permanent_noncollapse_laws"]["equivalent_forms"].__setitem__(
+                "ABSTRACTION != CAUSAL_USE", ["CAUSAL"]
+            ),
+        )
+
+    def test_editing_vendored_evidence_and_its_pin_together_fires(self):
+        import hashlib
+
+        rel = "provenance/canonical-extracts/FRESH_INSTANCE_GROUND_2026-09-26.md"
+        text = (COPY / rel).read_text(encoding="utf-8").replace(
+            "gates, not promotions", "gates and promotions"
+        )
+        self.write(rel, text)
+        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+        def fn(d):
+            for r in d["block_c_authority_graph"]["routing"]:
+                if r.get("path") == rel:
+                    r["sha256"] = digest
+        self.assert_fires("K7", fn)
+
+
 class FailClosedTests(CopyTestCase):
     def test_unparseable_constitution_withholds(self):
         self.write(REL_CONST, "{ not json")

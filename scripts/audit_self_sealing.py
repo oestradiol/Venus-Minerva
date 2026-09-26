@@ -189,8 +189,102 @@ def has_explicit_offset(since: str) -> bool:
     return parsed.tzinfo is not None
 
 
+_FIRST_ADDED: dict[tuple[str, str], str | None] = {}
+
+
+def first_added(path: str) -> str | None:
+    """The commit that first introduced path to the repository, if any.
+
+    Cached per repository and path; a path-only key returned one repository's
+    answer for another."""
+    key = (str(ROOT), path)
+    if key not in _FIRST_ADDED:
+        try:
+            out = git("log", "--diff-filter=A", "--format=%H", "--", path).split()
+        except RuntimeError:
+            out = []
+        _FIRST_ADDED[key] = out[-1] if out else None
+    return _FIRST_ADDED[key]
+
+
+def checker_changed(checker: str, episode: list[Commit], statuses: dict[str, set[str]]) -> bool:
+    """Did this episode change an existing checker?
+
+    Any touch counts -- modify, delete, rename, or re-add -- unless the episode
+    is the checker's genuine bootstrap: it contains the checker's first-ever
+    introduction and never deletes it. The previous test looked only at the
+    first status in the episode and required "M", so deleting a checker in one
+    commit and re-adding an edited copy in the next was invisible to R1. An
+    independent review demonstrated that with a checker that removed a
+    deny-list item from the constitution.
+    """
+    seen = statuses.get(checker)
+    if not seen:
+        return False
+    if seen == {"A"} and first_added(checker) in {c.sha for c in episode}:
+        return False
+    return True
+
+
+def bytes_preserved(sha: str, path: str) -> bool:
+    """A deleted or renamed prefreeze whose exact blob still exists somewhere in
+    the same commit's tree was moved, not destroyed -- for example retired
+    byte-for-byte into provenance/historical/. Checked by content hash, so a
+    rename that alters a single byte still fires."""
+    try:
+        old = git("rev-parse", f"{sha}^:{path}").strip()
+        tree = git("ls-tree", "-r", sha)
+    except RuntimeError:
+        return False
+    return any(line.split()[2] == old for line in tree.splitlines() if line.strip())
+
+
 def is_prefrozen(path: str, markers: list[str]) -> bool:
     return any(marker in path for marker in markers)
+
+
+def last_row_modifiers(commits: list[Commit]) -> dict[str, str]:
+    """Author of the last change to each declared-residual row.
+
+    Walks every commit in the window that touched the scope file and compares
+    each row with its state in the parent. Uncommitted edits are attributed to
+    the configured git user, so the check gives the same answer before and
+    after committing.
+    """
+    rel = SCOPE_PATH.relative_to(ROOT).as_posix()
+
+    def rows_at(ref: str) -> dict[str, str]:
+        try:
+            data = json.loads(git("show", f"{ref}:{rel}"))
+        except (RuntimeError, json.JSONDecodeError):
+            return {}
+        return {
+            r["key"]: json.dumps(r, sort_keys=True)
+            for r in data.get("declared_residuals", []) if "key" in r
+        }
+
+    last: dict[str, str] = {}
+    for commit in commits:
+        if rel not in commit.changes:
+            continue
+        before, after = rows_at(f"{commit.sha}^"), rows_at(commit.sha)
+        for key, row in after.items():
+            if before.get(key) != row:
+                last[key] = commit.author
+    try:
+        working = {
+            r["key"]: json.dumps(r, sort_keys=True)
+            for r in json.loads(SCOPE_PATH.read_text(encoding="utf-8")).get(
+                "declared_residuals", []) if "key" in r
+        }
+        committed = rows_at("HEAD")
+        me = git("config", "user.name").strip()
+    except (OSError, json.JSONDecodeError, RuntimeError):
+        return last
+    for key, row in working.items():
+        if committed.get(key) != row:
+            last[key] = me
+    return last
 
 
 def previously_declared() -> set[str] | None:
@@ -283,17 +377,19 @@ def main() -> int:
 
     for episode in episodes:
         touched: dict[str, str] = {}
+        statuses: dict[str, set[str]] = {}
         for commit in episode:
             for path, status in commit.changes.items():
                 # a path added then modified in one episode counts as added
                 touched.setdefault(path, status)
+                statuses.setdefault(path, set()).add(status)
 
         span = f"{episode[0].sha[:8]}..{episode[-1].sha[:8]}"
         author = episode[0].author
 
         # R1 — checker modified alongside an artifact it guards
         for checker, guards in guard_map.items():
-            if touched.get(checker) != "M":
+            if not checker_changed(checker, episode, statuses):
                 continue
             overlap = sorted(guards & set(touched))
             if not overlap:
@@ -328,7 +424,11 @@ def main() -> int:
             if waived(commit, "R3_PREFREEZE_MUTATION", exceptions):
                 continue
             for path, status in sorted(commit.changes.items()):
-                if status == "M" and is_prefrozen(path, markers):
+                # Deleting or renaming a prefrozen artifact removes the thing
+                # the freeze protects; it is at least as serious as editing it.
+                if status in ("D", "R") and is_prefrozen(path, markers) and bytes_preserved(commit.sha, path):
+                    continue
+                if status in ("M", "D", "R") and is_prefrozen(path, markers):
                     findings.append((
                         f"R3_PREFREEZE_MUTATION|{path}|{commit.sha[:8]}",
                         f"R3_PREFREEZE_MUTATION [{commit.sha[:8]}] {commit.author}: "
@@ -367,6 +467,21 @@ def main() -> int:
         key for key, through in r1_through.items()
         if key in declared and declared[key].get("through") != through
     }
+    # A bound may not be set by the party whose change it covers. Without
+    # this, re-declaring `through` after one's own checker edit was a
+    # scope-only commit that nothing flagged -- the bound was self-declared.
+    # An independent review found it; this session's own f53c13d was an
+    # instance. Author names are forgeable (see SIX_8), so this stops an
+    # accidental self-bound, not a deliberate forgery.
+    authors = {c.sha[:8]: c.author for c in commits}
+    modifier = last_row_modifiers(commits)
+    self_bound = {
+        key for key in r1_through
+        if key in declared and key not in grown
+        and authors.get(declared[key].get("through", "")) is not None
+        and modifier.get(key) == authors.get(declared[key].get("through", ""))
+    }
+    grown |= self_bound
     fresh = [(key, msg) for key, msg in findings if key not in declared or key in grown]
     carried = [(key, msg) for key, msg in findings if key in declared and key not in grown]
     stale = sorted(set(declared) - {key for key, _ in findings})
@@ -396,7 +511,12 @@ def main() -> int:
         print(f"SELF-SEALING AUDIT FINDINGS ({len(fresh)})")
         for key, msg in fresh:
             print(f"  {msg}")
-            if key in grown:
+            if key in self_bound:
+                print(
+                    f"      declared by {modifier.get(key)}, who authored the change it "
+                    f"covers; a bound needs a party other than the covered author"
+                )
+            elif key in grown:
                 print(
                     f"      declared through {declared[key].get('through', 'NOTHING')}; "
                     f"the checker was modified again after that declaration"
