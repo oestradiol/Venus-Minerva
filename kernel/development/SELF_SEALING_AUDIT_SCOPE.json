@@ -284,6 +284,12 @@
       "class": "UNADJUDICATED",
       "note": "This assistant's own commit (eefdde2) modified the self-sealing checker itself and its own scope file in one commit, fixing the timezone defect and declaring the residuals it newly exposed together. Declared rather than bypassed: this branch already learned once (H1-H2) that an is_restoration-style exemption for a checker's own author suppresses exactly the wrong finding. An independent reviewer with no authorship relation to this change should confirm the fix and the declared residuals are not doing each other favors.",
       "reopening_condition": "Independent adversarial review (Stage 4 of this session) confirms the timezone fix is sound and the three residuals it surfaced are correctly characterized, not manufactured to look resolved."
+    },
+    {
+      "key": "R1_SELF_SEALING|scripts/audit_constitution.py|eefdde25",
+      "class": "UNADJUDICATED",
+      "note": "This assistant's commit 576145e modified scripts/audit_constitution.py and kernel/CONSTITUTION.json together: it strengthened K1-K5 and, in the same move, reclassified epistemic_role and roadmap_role, replaced the bare descriptive_roles list with reasons, and removed withhold_baseline. The guard edge was armed in eefdde2 specifically so that this change would be surfaced rather than exempted. The removal of withhold_baseline is the part most in need of an independent look: it relaxes a gate, and the stated reason (the ratchet conflicted with autonomous worker commits and was stale at introduction) was judged by the same party that removed it.",
+      "reopening_condition": "A reviewer with no authorship relation to 576145e confirms (a) each strengthened check fails on the defeat named in its test, (b) the two role reclassifications match the fields' actual context, and (c) the replacement for withhold_baseline enforces what the authority-graph axiom states rather than something weaker."
     }
   ],
   "withhold_rule": "If the audit window cannot be resolved, or the scope declaration cannot be parsed, the auditor fails closed rather than reporting PASS.",

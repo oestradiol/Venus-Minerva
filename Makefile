@@ -16,6 +16,7 @@ audit: test lint custody
 	python3 scripts/audit_minerva_construct_dispositions.py
 	python3 scripts/audit_self_sealing.py
 	python3 scripts/audit_dag_test_coverage.py
+	python3 scripts/audit_constitution.py
 
 console:
 	python3 -m apps.worldmirror_console.server
